@@ -1,0 +1,2 @@
+# ignore the virtual environment, we'll install the packages in the actual docker container
+/venv
