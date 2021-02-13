@@ -8,6 +8,7 @@ tweets = pd.read_csv(
     error_bad_lines=False,
     names=['user_id', 'tweet_id', 'tweet', 'timestamp']
 )
+tweets['timestamp'] = tweets['timestamp'].apply(lambda x: str(x).replace(' ', 'T'))
 
 # Read user data
 users = pd.read_csv(
