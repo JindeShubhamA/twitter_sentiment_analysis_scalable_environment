@@ -1,2 +1,4 @@
 /non-git/
 .DS_Store
+venv
+*.csv
