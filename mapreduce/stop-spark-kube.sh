@@ -5,4 +5,3 @@ kubectl delete -f $filename
 minikube stop
 
 minikube delete
-
