@@ -21,7 +21,7 @@ settings_body = {
             },
             "analyzer": {
                 "tweet_analyzer": {
-                    "filter": ["stopwords", "lowercase", "stemmer"],
+                    "filter": ["lowercase", "stemmer", "stopwords"],
                     "type": "custom",
                     "tokenizer": "standard"
                 }
@@ -34,23 +34,18 @@ mappings_body = {
     "properties": {
         "user_id": {"type": "keyword"},
         "tweet_id": {"type": "keyword"},
-        "tweet": {"type": "text"},
+        "tweet": {"type": "text", "analyzer":"tweet_analyzer", "search_analyzer":"tweet_analyzer"},
         "timestamp": {"type": "date"},
         "location": {"type": "geo_point"}
     }
 }
 
 print('Creating tweets index...')
-es.indices.create(index='tweets')
+es.indices.create(index='tweets', body=settings_body, ignore=400)
 print('Done!')
 
-# # Test this tomorrow !!
-# print('Updating settings...')
-# es.indices.put_settings(index_cfg_body, index='tweets')
-# print('Done!')
-
 print('Updating mapping...')
-es.indices.put_mapping(index_cfg_body, index='tweets')
+es.indices.put_mapping(body=mappings_body, index='tweets')
 print('Done!')
 
 
