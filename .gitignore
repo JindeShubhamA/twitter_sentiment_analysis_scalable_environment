@@ -1,4 +1,4 @@
 /non-git/
 .DS_Store
 venv
-*.csv
+elasticsearch-raw/data
