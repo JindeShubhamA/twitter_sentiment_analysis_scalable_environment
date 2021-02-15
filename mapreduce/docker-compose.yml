@@ -5,9 +5,11 @@ networks:
     driver: bridge
 
 services:
-  spark-master:
+  # Do not name it spark-master, this will cause an environment variable clash in kubernetes, don't ask me how I know this :(
+  # "So, for our service spark-master, kubernetes would generate an env variable called SPARK_MASTER_PORT=tcp://100.68.168.187:8080, but in turn SPARK_MASTER_PORT was an internal variable for APACHE SPARK!"
+  spark-leader:
     image: docker.io/bitnami/spark:latest
-    hostname: spark-master
+    hostname: spark-leader
     networks:
       - spark-communication
     environment:
@@ -21,35 +23,32 @@ services:
       - '7077:7077'
   spark-worker:
     image: docker.io/bitnami/spark:latest
+    # we want the leader to be done before doing the workers
+    depends_on:
+      - spark-leader
     deploy:
-      replicas: 2
+      replicas: 1
     networks:
       - spark-communication
     environment:
       - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_MASTER_URL=spark://spark-leader:7077
       - SPARK_WORKER_MEMORY=1G
       - SPARK_WORKER_CORES=1
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-#  spark-worker-2:
-#    image: docker.io/bitnami/spark:latest
-#    networks:
-#      - spark-communication
-#    environment:
-#      - SPARK_MODE=worker
-#      - SPARK_MASTER_URL=spark://spark-master:7077
-#      - SPARK_WORKER_MEMORY=1G
-#      - SPARK_WORKER_CORES=1
-#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-#      - SPARK_RPC_ENCRYPTION_ENABLED=no
-#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-#      - SPARK_SSL_ENABLED=no
 
   spark-driver:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: docker.io/richardswesterhof/mapreduce:latest
+    # we want the leader and the workers to be done before starting the driver
+    depends_on:
+      - spark-leader
+      - spark-worker
     hostname: spark-driver
     networks:
       - spark-communication
