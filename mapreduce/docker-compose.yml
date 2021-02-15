@@ -52,3 +52,6 @@ services:
     hostname: spark-driver
     networks:
       - spark-communication
+    ports:
+    - '30001:30001'
+    - '30002:30002'

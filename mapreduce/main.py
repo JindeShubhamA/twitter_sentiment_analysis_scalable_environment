@@ -6,7 +6,6 @@ spark_conf = pyspark.SparkConf()
 spark_conf.setAll([
     ('spark.master', "spark://spark-leader:7077"),
     ('spark.app.name', 'TestingSpark'),
-    ("spark.executor.instances", "2"),
     # client mode should be better if the driver and the workers are on the same network
     # (since they are on the same docker network, this seems appropriate)
     ('spark.submit.deployMode', 'client'),
@@ -15,6 +14,9 @@ spark_conf.setAll([
     ('spark.logConf', 'false'),
     ('spark.driver.bindAddress', '0.0.0.0'),
     ('spark.driver.host', 'spark-driver'),
+    ('spark.kubernetes.driver.pod.name', 'spark-driver'),
+    ('spark.driver.port', '30001'),
+    ('spark.driver.blockManager.port', '30002'),
 ])
 
 sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
@@ -29,5 +31,3 @@ def inside(p):
 count = sc.parallelize(range(0, NUM_SAMPLES)) \
     .filter(inside).count()
 print("Pi is roughly %f" % (4.0 * count / NUM_SAMPLES))
-
-sc.close()
