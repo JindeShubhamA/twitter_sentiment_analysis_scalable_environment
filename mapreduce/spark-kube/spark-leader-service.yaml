@@ -2,7 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+    kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
+    kompose.service.type: LoadBalancer
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
@@ -18,5 +19,6 @@ spec:
       targetPort: 7077
   selector:
     io.kompose.service: spark-leader
+  type: LoadBalancer
 status:
   loadBalancer: {}

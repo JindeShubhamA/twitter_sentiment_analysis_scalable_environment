@@ -21,15 +21,18 @@ services:
     ports:
       - '8080:8080'
       - '7077:7077'
+
   spark-worker:
     image: docker.io/bitnami/spark:latest
     # we want the leader to be done before doing the workers
     depends_on:
       - spark-leader
     deploy:
-      replicas: 1
+      replicas: 3
     networks:
       - spark-communication
+#    ports:
+#      - '8081:8081'
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-leader:7077
@@ -39,19 +42,3 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-
-  spark-driver:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: docker.io/richardswesterhof/mapreduce:latest
-    # we want the leader and the workers to be done before starting the driver
-    depends_on:
-      - spark-leader
-      - spark-worker
-    hostname: spark-driver
-    networks:
-      - spark-communication
-    ports:
-    - '30001:30001'
-    - '30002:30002'

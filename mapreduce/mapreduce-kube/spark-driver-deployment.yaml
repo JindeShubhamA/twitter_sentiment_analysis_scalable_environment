@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+    kompose.cmd: ./tools/kompose -f mapreduce-compose.yml convert -o mapreduce-kube
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       annotations:
-        kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+        kompose.cmd: ./tools/kompose -f mapreduce-compose.yml convert -o mapreduce-kube
         kompose.version: 1.22.0 (955b78124)
       creationTimestamp: null
       labels:

@@ -1,9 +1,9 @@
 minikube start
 
-folder=spark-kube
+folder=mapreduce-kube
 
 kubectl delete -f $folder
 kubectl apply -f $folder
 
-echo "> Spark cluster up and running, to tunnel into Spark Master UI, use: minikube service spark-leader"
+echo "> Driver up and running"
 echo "> To see the status of the Kubernetes services and pods, use: minikube dashboard"

@@ -1,3 +1,3 @@
-folder=spark-kube
+folder=mapreduce-kube
 
 kubectl delete -f $folder

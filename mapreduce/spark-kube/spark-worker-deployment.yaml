@@ -2,46 +2,48 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+    kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
-    io.kompose.service: spark-leader
-  name: spark-leader
+    io.kompose.service: spark-worker
+  name: spark-worker
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      io.kompose.service: spark-leader
+      io.kompose.service: spark-worker
   strategy: {}
   template:
     metadata:
       annotations:
-        kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+        kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
         kompose.version: 1.22.0 (955b78124)
       creationTimestamp: null
       labels:
         io.kompose.network/spark-communication: "true"
-        io.kompose.service: spark-leader
+        io.kompose.service: spark-worker
     spec:
       containers:
         - env:
             - name: SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED
               value: "no"
+            - name: SPARK_MASTER_URL
+              value: spark://spark-leader:7077
             - name: SPARK_MODE
-              value: master
+              value: worker
             - name: SPARK_RPC_AUTHENTICATION_ENABLED
               value: "no"
             - name: SPARK_RPC_ENCRYPTION_ENABLED
               value: "no"
             - name: SPARK_SSL_ENABLED
               value: "no"
+            - name: SPARK_WORKER_CORES
+              value: "1"
+            - name: SPARK_WORKER_MEMORY
+              value: 1G
           image: docker.io/bitnami/spark:latest
-          name: spark-leader
-          ports:
-            - containerPort: 8080
-            - containerPort: 7077
+          name: spark-worker
           resources: {}
-      hostname: spark-leader
       restartPolicy: Always
 status: {}

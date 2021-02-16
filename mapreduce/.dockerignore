@@ -1,10 +1,11 @@
 # ignore the virtual environment, we'll install the packages in the actual docker container
 /venv/
 /tools/
-/kubernetes/
+/spark-kube/
+/mapreduce-kube/
 Dockerfile
 Dockerfile.base
-docker-compose.yml
+*.yml
 .dockerignore
 .gitignore
 *.sh
