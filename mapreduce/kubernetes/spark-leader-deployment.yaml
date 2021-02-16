@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: spark-leader
+  name: spark-leader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: spark-leader
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: ./tools/kompose convert -o ./kubernetes/
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/spark-communication: "true"
+        io.kompose.service: spark-leader
+    spec:
+      containers:
+        - env:
+            - name: SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED
+              value: "no"
+            - name: SPARK_MODE
+              value: master
+            - name: SPARK_RPC_AUTHENTICATION_ENABLED
+              value: "no"
+            - name: SPARK_RPC_ENCRYPTION_ENABLED
+              value: "no"
+            - name: SPARK_SSL_ENABLED
+              value: "no"
+          image: docker.io/bitnami/spark:latest
+          name: spark-leader
+          ports:
+            - containerPort: 8080
+            - containerPort: 7077
+          resources: {}
+      hostname: spark-leader
+      restartPolicy: Always
+status: {}

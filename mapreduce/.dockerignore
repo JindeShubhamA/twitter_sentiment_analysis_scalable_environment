@@ -2,3 +2,10 @@
 /venv/
 /tools/
 /kubernetes/
+Dockerfile
+Dockerfile.base
+docker-compose.yml
+.dockerignore
+.gitignore
+*.sh
+*.md

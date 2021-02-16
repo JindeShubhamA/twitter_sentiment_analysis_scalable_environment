@@ -1,6 +1,6 @@
 minikube start
 
-filename=./kubernetes/spark-kube-config.yml
+filename=./kubernetes/
 
 kubectl delete -f $filename
 kubectl apply -f $filename
