@@ -29,17 +29,27 @@ sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
 print("configured spark")
 
 
+# q = """{
+#     "query": {
+#         "bool" : {
+#             "must" : [
+#                 "match_all" : {}
+#             ],
+#            "filter" : {
+#                 "user_id": "16217679"
+#             }
+#         }
+#     }
+# }"""
+
 q = """{
-    "query": {
-        "bool" : {
-            "must" : {
-                "match_all" : {}
-            },
-           "filter" : {
-                "user_id": "16217679"
-            }
-        }
+  "query": { 
+    "bool": { 
+      "must": [
+        { "match": { "user_id": "16217679" }}
+      ]
     }
+  }
 }"""
 
 # NUM_SAMPLES = 10000
@@ -69,8 +79,8 @@ es_rdd = sc.newAPIHadoopRDD(
 
 
 print("output below:")
-print(es_rdd.first())
+print(es_rdd)
 
-time.sleep(60)
+time.sleep(600)
 
 # print(tweets)
