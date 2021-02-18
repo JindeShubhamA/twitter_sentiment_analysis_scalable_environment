@@ -8,6 +8,7 @@ metadata:
   labels:
     io.kompose.service: spark-driver
   name: spark-driver
+  namespace: es-raw
 spec:
   ports:
     - name: "30001"
