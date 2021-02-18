@@ -1,8 +1,8 @@
 version: '3'
 
-networks:
-  spark-communication:
-    external: true
+#networks:
+#  spark-communication:
+#    external: true
 
 services:
   spark-driver:
@@ -11,11 +11,11 @@ services:
       dockerfile: Dockerfile
     image: docker.io/richardswesterhof/mapreduce:latest
     hostname: spark-driver
-    networks:
-      # join the external network for spark communication
-      # this does mean the mapreduce cannot run without the spark cluster running in kubernetes
-      # but this wouldn't really make sense anyway
-      - spark-communication
+#    networks:
+#      # join the external network for spark communication
+#      # this does mean the mapreduce cannot run without the spark cluster running in kubernetes
+#      # but this wouldn't really make sense anyway
+#      - spark-communication
     ports:
       - '30001:30001'
       - '30002:30002'

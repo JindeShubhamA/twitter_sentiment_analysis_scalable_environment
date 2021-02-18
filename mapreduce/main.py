@@ -1,3 +1,4 @@
+import time
 from random import random
 from pyspark.sql import SparkSession
 import pyspark
@@ -24,6 +25,8 @@ spark_conf.setAll([
 sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
 
 # spark = SparkSession.builder.config(spark_conf).getOrCreate()
+
+print("configured spark")
 
 
 q = """{
@@ -52,9 +55,9 @@ q = """{
 # print("Pi is roughly %f" % (4.0 * count / NUM_SAMPLES))
 
 es_read_conf = {
-    "es.nodes" : "elasticsearch.es-raw",
+    "es.nodes" : "elasticsearch",
     "es.port" : "9200",
-    "es.index" : "tweets",
+    "es.resource" : "tweets/_doc",
     "es.query" : q
 }
 
@@ -65,6 +68,9 @@ es_rdd = sc.newAPIHadoopRDD(
     conf=es_read_conf)
 
 
+print("output below:")
 print(es_rdd.first())
+
+time.sleep(60)
 
 # print(tweets)

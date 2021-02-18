@@ -8,6 +8,7 @@ metadata:
   labels:
     io.kompose.service: spark-worker
   name: spark-worker
+  namespace: es-raw
 spec:
   replicas: 3
   selector:
@@ -21,7 +22,6 @@ spec:
         kompose.version: 1.22.0 (955b78124)
       creationTimestamp: null
       labels:
-        io.kompose.network/spark-communication: "true"
         io.kompose.service: spark-worker
     spec:
       containers:

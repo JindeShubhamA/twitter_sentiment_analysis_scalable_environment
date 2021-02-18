@@ -3,12 +3,12 @@ kind: Service
 metadata:
   annotations:
     kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
-    kompose.service.type: LoadBalancer
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
     io.kompose.service: spark-leader
   name: spark-leader
+  namespace: es-raw
 spec:
   ports:
     - name: "8080"
@@ -19,6 +19,5 @@ spec:
       targetPort: 7077
   selector:
     io.kompose.service: spark-leader
-  type: LoadBalancer
 status:
   loadBalancer: {}

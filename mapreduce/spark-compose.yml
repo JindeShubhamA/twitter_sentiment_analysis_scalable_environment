@@ -1,8 +1,8 @@
 version: '3'
 
-networks:
-  spark-communication:
-    driver: bridge
+#networks:
+#  spark-communication:
+#    driver: bridge
 
 services:
   # Do not name it spark-master, this will cause an environment variable clash in kubernetes, don't ask me how I know this :(
@@ -10,8 +10,8 @@ services:
   spark-leader:
     image: docker.io/bitnami/spark:latest
     hostname: spark-leader
-    networks:
-      - spark-communication
+#    networks:
+#      - spark-communication
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -29,8 +29,8 @@ services:
       - spark-leader
     deploy:
       replicas: 3
-    networks:
-      - spark-communication
+#    networks:
+#      - spark-communication
 #    ports:
 #      - '8081:8081'
     environment:

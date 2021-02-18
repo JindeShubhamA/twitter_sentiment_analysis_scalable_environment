@@ -3,12 +3,12 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
-    kompose.service.type: LoadBalancer
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
     io.kompose.service: spark-leader
   name: spark-leader
+  namespace: es-raw
 spec:
   replicas: 1
   selector:
@@ -19,11 +19,9 @@ spec:
     metadata:
       annotations:
         kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
-        kompose.service.type: LoadBalancer
         kompose.version: 1.22.0 (955b78124)
       creationTimestamp: null
       labels:
-        io.kompose.network/spark-communication: "true"
         io.kompose.service: spark-leader
     spec:
       containers:
