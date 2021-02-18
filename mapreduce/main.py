@@ -81,6 +81,4 @@ es_rdd = sc.newAPIHadoopRDD(
 print("output below:")
 print(es_rdd)
 
-time.sleep(600)
-
 # print(tweets)
