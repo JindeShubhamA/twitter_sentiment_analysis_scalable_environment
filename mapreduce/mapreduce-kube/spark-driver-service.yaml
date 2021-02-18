@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: ./tools/kompose -f mapreduce-compose.yml convert -o mapreduce-kube
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: spark-driver
+  name: spark-driver
+spec:
+  ports:
+    - name: "30001"
+      port: 30001
+      targetPort: 30001
+    - name: "30002"
+      port: 30002
+      targetPort: 30002
+  selector:
+    io.kompose.service: spark-driver
+status:
+  loadBalancer: {}

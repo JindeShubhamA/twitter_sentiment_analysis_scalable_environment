@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: ./tools/kompose -f mapreduce-compose.yml convert -o mapreduce-kube
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: spark-driver
+  name: spark-driver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: spark-driver
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: ./tools/kompose -f mapreduce-compose.yml convert -o mapreduce-kube
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/spark-communication: "true"
+        io.kompose.service: spark-driver
+    spec:
+      containers:
+        - image: docker.io/richardswesterhof/mapreduce:latest
+          name: spark-driver
+          ports:
+            - containerPort: 30001
+            - containerPort: 30002
+          resources: {}
+      hostname: spark-driver
+      restartPolicy: Always
+status: {}
