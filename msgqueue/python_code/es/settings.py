@@ -1,10 +1,3 @@
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
-import csv
-from elasticsearch.helpers import scan
-import json
-es = Elasticsearch(hosts=['http://elasticsearch:9200'])
-
 settings_body = {
     "settings": {
         "number_of_shards": 5,
@@ -40,31 +33,3 @@ mappings_body = {
         "location": {"type": "geo_point"}
     }
 }
-
-print('Creating tweets index...')
-es.indices.create(index='tweets', body=settings_body, ignore=400)
-print('Done!')
-
-print('Updating mapping...')
-es.indices.put_mapping(body=mappings_body, index='tweets')
-print('Done!')
-
-
-print('Populating database...')
-with open('tweet_data_500k.csv', newline='\n') as f:
-    reader = csv.DictReader(f, delimiter='\t')
-    print("here")
-    bulk(es, reader, index='tweets', raise_on_error=False) # skips rows with bad timestamps
-
-print('Done!')
-
-es_response = scan(
-    es,
-    index='tweets',
-
-    query={"query": { "match_all" : {}}}
-)
-
-for item in es_response:
-    print(json.dumps(item))
-

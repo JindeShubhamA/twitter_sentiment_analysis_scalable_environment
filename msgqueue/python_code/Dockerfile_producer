@@ -3,5 +3,6 @@ WORKDIR /usr/src/app
 COPY . .
 RUN pip3 install --upgrade pip
 RUN pip3 install elasticsearch
-CMD ["import_in_elasticsearch.py"]
+RUN pip3 install kafka-python
+CMD ["producer.py"]
 ENTRYPOINT [ "python3" ]
