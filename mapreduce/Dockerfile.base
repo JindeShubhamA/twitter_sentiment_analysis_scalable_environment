@@ -1,13 +1,16 @@
 FROM python:3.6
 
+# apparently the python image won't install java 8 packages so we use 11
 RUN mkdir -p /usr/share/man/man1 && \
     apt-get update -y && \
-    apt-get install -y openjdk-11-jdk
+    apt-get install -y openjdk-11-jre-headless && \
+    apt-get clean
 
-COPY ./requirements.txt ./requirements.txt
+COPY ./src/requirements.txt ./requirements.txt
 
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
+RUN pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt && \
+    pip3 cache purge
 
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
 RUN export JAVA_HOME
