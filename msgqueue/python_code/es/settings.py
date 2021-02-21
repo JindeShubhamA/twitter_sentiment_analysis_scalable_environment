@@ -33,3 +33,5 @@ mappings_body = {
         "location": {"type": "geo_point"}
     }
 }
+
+query = {"query": {"match_all": {}}}

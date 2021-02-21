@@ -8,7 +8,7 @@ services:
     ports:
       - 9200:9200
     networks:
-    - elastic
+    - msgqueue
     healthcheck:
         test: ["CMD", "curl", "-f", "http://elasticsearch:9200"]
         interval: 30s
@@ -20,8 +20,6 @@ services:
       context: ./python_code
       dockerfile: Dockerfile_producer
     container_name: producer
-    networks:
-      - elastic
     depends_on:
       - elasticsearch
       - kafka
@@ -30,7 +28,7 @@ services:
       - kafka
     restart: on-failure
     networks:
-    - kafka
+    - msgqueue
 
   consumer:
     build:
@@ -43,14 +41,14 @@ services:
     container_name: consumer
     restart: on-failure
     networks:
-    - kafka
+    - msgqueue
 
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
     ports:
       - "2181:2181"
     networks:
-    - kafka
+    - msgqueue
 
   kafka:
     build: python_code/kafka-docker/
@@ -68,17 +66,15 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CREATE_TOPICS: "topic_test:1:1"
     networks:
-    - kafka
+    - msgqueue
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 #
-#  client:
-#      image: appropriate/curl:latest
-#      networks:
-#        - elastic
-#      command: "curl http://elasticsearch:9200"
+  client:
+      image: appropriate/curl:latest
+      networks:
+        - msgqueue
+      command: "curl http://elasticsearch:9200"
 networks:
-  elastic:
-    driver: bridge
-  kafka:
+  msgqueue:
     driver: bridge
