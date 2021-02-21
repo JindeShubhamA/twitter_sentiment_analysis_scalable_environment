@@ -15,4 +15,3 @@ for event in consumer:
     event_data = event.value
     # Do whatever you want
     print(event_data)
-
