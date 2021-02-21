@@ -7,7 +7,7 @@ from es import settings
 class esDriver(object):
     def __init__(self):
         # self.es = Elasticsearch(hosts=['http://localhost:9200/'])
-        self.es = Elasticsearch(hosts=['http://0.0.0.0:9200/'])
+        self.es = Elasticsearch(hosts=['http://elasticsearch:9200/'])
 
 
     def create(self):
