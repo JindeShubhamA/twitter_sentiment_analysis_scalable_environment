@@ -66,7 +66,7 @@ q = """{
 # print("Pi is roughly %f" % (4.0 * count / NUM_SAMPLES))
 
 es_read_conf = {
-    "es.nodes" : "elasticsearch",
+    "es.nodes" : "elasticsearch-raw",
     "es.port" : "9200",
     "es.resource" : "tweets/_doc",
     "es.query" : q
