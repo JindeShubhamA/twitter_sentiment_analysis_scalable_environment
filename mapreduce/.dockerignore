@@ -1,12 +1,14 @@
 # ignore the virtual environment, we'll install the packages in the actual docker container
 /venv/
+# ignore everthing else that isn't used during runtime as well
 /tools/
 /spark-kube/
 /mapreduce-kube/
-Dockerfile
+src/Dockerfile
 Dockerfile.base
 *.yml
 .dockerignore
 .gitignore
 *.sh
 *.md
+*.tar

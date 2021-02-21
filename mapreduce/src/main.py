@@ -13,6 +13,7 @@ spark_conf.setAll([
     ('spark.ui.showConsoleProgress', 'true'),
     ('spark.eventLog.enabled', 'false'),
     ('spark.logConf', 'false'),
+    # these are important for spark to communicate back to us
     ('spark.driver.bindAddress', '0.0.0.0'),
     ('spark.driver.host', 'spark-driver'),
     ('spark.kubernetes.driver.pod.name', 'spark-driver'),

@@ -1,13 +1,24 @@
-FROM python:3.6
+FROM python:3.6-alpine
 
-RUN mkdir -p /usr/share/man/man1 && \
-    apt-get update -y && \
-    apt-get install -y openjdk-11-jdk
+# apparently the python image won't install java 8 packages so we use 11
+# RUN mkdir -p /usr/share/man/man1 && \
+#   apt-get update -y && \
+#   # don't install recommended packages along with it (since they aren't strictly needed)
+#   apt-get install -y --no-install-recommends openjdk-11-jre-headless && \
+#   apt-get clean
 
-COPY ./requirements.txt ./requirements.txt
+# needed by pyspark
+RUN apk add --no-cache bash
 
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
+RUN apk add --no-cache openjdk8-jre
 
-ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
+
+COPY ./src/requirements.txt ./requirements.txt
+
+# purge the pip cache at the end since we don't have a need for it inside an image
+RUN pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt && \
+    pip3 cache purge
+
+# ENV JAVA_HOME /usr/bin/java
 RUN export JAVA_HOME
