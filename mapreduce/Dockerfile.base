@@ -20,5 +20,5 @@ RUN pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 cache purge
 
-# ENV JAVA_HOME /usr/bin/java
+ENV JAVA_HOME /usr/bin/java
 RUN export JAVA_HOME
