@@ -2,7 +2,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 import csv
 
-es = Elasticsearch(hosts=['elasticsearch:9200'])
+es = Elasticsearch(hosts=['elasticsearch-raw:9200'])
 
 settings_body = {
     "settings": {
