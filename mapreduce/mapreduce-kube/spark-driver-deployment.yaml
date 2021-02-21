@@ -8,7 +8,6 @@ metadata:
   labels:
     io.kompose.service: spark-driver
   name: spark-driver
-  namespace: es-raw
 spec:
   replicas: 1
   selector:
