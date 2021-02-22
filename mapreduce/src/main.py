@@ -26,23 +26,7 @@ spark_conf.setAll([
 
 sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
 
-# spark = SparkSession.builder.config(spark_conf).getOrCreate()
-
 print("configured spark")
-
-
-# q = """{
-#     "query": {
-#         "bool" : {
-#             "must" : [
-#                 "match_all" : {}
-#             ],
-#            "filter" : {
-#                 "user_id": "16217679"
-#             }
-#         }
-#     }
-# }"""
 
 q = """{
   "query": { 
@@ -54,75 +38,47 @@ q = """{
   }
 }"""
 
-# NUM_SAMPLES = 10000
-#
-#
-# def inside(p):
-#     x, y = random(), random()
-#     return x * x + y * y < 1
-#
-#
-# count = sc.parallelize(range(0, NUM_SAMPLES)) \
-#     .filter(inside).count()
-# print("Pi is roughly %f" % (4.0 * count / NUM_SAMPLES))
+es_read_conf = {
+    "es.nodes" : "elasticsearch-raw",
+    "es.port" : "9200",
+    "es.resource" : "tweets/_doc",
+    "es.query" : q
+}
 
-# es_read_conf = {
-#     "es.nodes" : "elasticsearch-raw",
-#     "es.port" : "9200",
-#     "es.resource" : "tweets/_doc",
-#     "es.query" : q
-# }
+retrieved_tweets = sc.newAPIHadoopRDD(
+    inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
+    keyClass="org.apache.hadoop.io.NullWritable",
+    valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
+    conf=es_read_conf)
 
-# es_rdd = sc.newAPIHadoopRDD(
-#     inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
-#     keyClass="org.apache.hadoop.io.NullWritable",
-#     valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
-#     conf=es_read_conf)
-#
-#
-# print("output below:")
-# print(es_rdd.first())
 
-# es_rdd = sc.parallelize([{'num': i} for i in range(10)])
+print(f"got ${retrieved_tweets.count()} tweets")
 
-# python_rdd = es_rdd.map(lambda item: ('key', {
-#     'id': item['num'],
-# }))
-#
-# es_write_conf = {
-#     "es.nodes" : "elasticsearch-proc",
-#     "es.port" : "9200",
-#     "es.resource" : "tweets/_doc",
-#     # "es.input.json": "yes",
-#     # "es.mapping.id": "doc_id"
-# }
+es_write_conf = {
+        "es.nodes" : 'elasticsearch-proc',
+        "es.port" : '9200',
+        "es.resource" : '%s/%s' % ('key_counts', 'count'),
+        "es.input.json": 'true'
+    }
 
-# python_rdd.saveAsNewAPIHadoopFile(
-#     path='-',
-#     outputFormatClass="org.elasticsearch.hadoop.mr.EsOutputFormat",
-#     keyClass="org.apache.hadoop.io.NullWritable",
-#     valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
-#     conf=es_write_conf)
-
-rdd = sc.parallelize([{'num': i} for i in range(10)])
 def remove__id(doc):
     # `_id` field needs to be removed from the document
     # to be indexed, else configure this in `conf` while
     # calling the `saveAsNewAPIHadoopFile` API
     doc.pop('_id', '')
     return doc
-new_rdd = rdd.map(remove__id).map(json.dumps).map(lambda x: ('key', x))
-new_rdd.saveAsNewAPIHadoopFile(
+
+
+key_counts = retrieved_tweets.countByKey().map(remove__id).map(json.dumps).map(lambda x: ('key', x))
+
+print("Writing to es cluster...")
+
+key_counts.saveAsNewAPIHadoopFile(
     path='-',
     outputFormatClass="org.elasticsearch.hadoop.mr.EsOutputFormat",
     keyClass="org.apache.hadoop.io.NullWritable",
     valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
-    conf={
-        "es.nodes" : 'elasticsearch-proc',
-        "es.port" : '9200',
-        "es.resource" : '%s/%s' % ('index_name', 'doc_type_name'),
-        "es.input.json": 'true'
-    }
+    conf=es_write_conf
 )
 
-# print(tweets)
+print("Done!")
