@@ -1,17 +1,17 @@
 version: '3'
 
-#networks:
-#  spark-communication:
-#    driver: bridge
+networks:
+  elasticsearch-proc_elastic:
+    external: true
 
 services:
   # Do not name it spark-master, this will cause an environment variable clash in kubernetes, don't ask me how I know this :(
   # "So, for our service spark-master, kubernetes would generate an env variable called SPARK_MASTER_PORT=tcp://100.68.168.187:8080, but in turn SPARK_MASTER_PORT was an internal variable for APACHE SPARK!"
   spark-leader:
-    image: docker.io/bitnami/spark:latest
+    image: docker.io/bitnami/spark:3.0.1
     hostname: spark-leader
-#    networks:
-#      - spark-communication
+    networks:
+      - elasticsearch-proc_elastic
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -23,14 +23,14 @@ services:
       - '7077:7077'
 
   spark-worker:
-    image: docker.io/bitnami/spark:latest
+    image: docker.io/bitnami/spark:3.0.1
     # we want the leader to be done before doing the workers
     depends_on:
       - spark-leader
     deploy:
-      replicas: 3
-#    networks:
-#      - spark-communication
+      replicas: 2
+    networks:
+      - elasticsearch-proc_elastic
 #    ports:
 #      - '8081:8081'
     environment:
