@@ -55,11 +55,13 @@ retrieved_tweets = sc.newAPIHadoopRDD(
 print(f"got ${retrieved_tweets.count()} tweets")
 
 es_write_conf = {
-        "es.nodes" : 'elasticsearch-proc',
-        "es.port" : '9200',
-        "es.resource" : '%s/%s' % ('key_counts', 'count'),
-        "es.input.json": 'true'
-    }
+    "es.nodes" : 'elasticsearch-proc',
+    "es.port" : '9200',
+    "es.resource" : '%s/%s' % ('tweet_numbers', 'tweet_num'),
+    "es.input.json": 'true'
+}
+
+tweet_numbers = sc.parallelize([{'tweet_num': i} for i in range(retrieved_tweets.count())])
 
 def remove__id(doc):
     # `_id` field needs to be removed from the document
@@ -69,11 +71,11 @@ def remove__id(doc):
     return doc
 
 
-key_counts = retrieved_tweets.countByKey().map(remove__id).map(json.dumps).map(lambda x: ('key', x))
+tweet_nums_rdd = tweet_numbers.map(remove__id).map(json.dumps).map(lambda x: ('key', x))
 
 print("Writing to es cluster...")
 
-key_counts.saveAsNewAPIHadoopFile(
+tweet_nums_rdd.saveAsNewAPIHadoopFile(
     path='-',
     outputFormatClass="org.elasticsearch.hadoop.mr.EsOutputFormat",
     keyClass="org.apache.hadoop.io.NullWritable",
