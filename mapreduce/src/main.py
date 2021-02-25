@@ -39,7 +39,7 @@ q = """{
 }"""
 
 es_read_conf = {
-    "es.nodes" : "elasticsearch-raw",
+    "es.nodes" : "elasticsearch",
     "es.port" : "9200",
     "es.resource" : "tweets/_doc",
     "es.query" : q
@@ -55,7 +55,7 @@ retrieved_tweets = sc.newAPIHadoopRDD(
 print(f"got ${retrieved_tweets.count()} tweets")
 
 es_write_conf = {
-    "es.nodes" : 'elasticsearch-proc',
+    "es.nodes" : 'elasticsearch',
     "es.port" : '9200',
     "es.resource" : '%s/%s' % ('tweet_numbers', 'tweet_num'),
     "es.input.json": 'true'
