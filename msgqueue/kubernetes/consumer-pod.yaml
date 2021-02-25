@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.network/msgqueue: "true"
+    io.kompose.service: consumer
+  name: consumer
+spec:
+  containers:
+    - image: consumer
+      name: consumer
+      resources: {}
+  restartPolicy: OnFailure
+status: {}
