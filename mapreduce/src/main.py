@@ -1,28 +1,9 @@
 import json
-import time
-from random import random
-from pyspark.sql import SparkSession
 import pyspark
+import settings
 
 spark_conf = pyspark.SparkConf()
-spark_conf.setAll([
-    ('spark.master', "spark://spark-leader:7077"),
-    ('spark.app.name', 'TestingSpark'),
-    # client mode should be better if the driver and the workers are on the same network
-    # (since they are on the same docker network, this seems appropriate)
-    ('spark.submit.deployMode', 'client'),
-    ('spark.ui.showConsoleProgress', 'true'),
-    ('spark.eventLog.enabled', 'false'),
-    ('spark.logConf', 'false'),
-    # these are important for spark to communicate back to us
-    ('spark.driver.bindAddress', '0.0.0.0'),
-    ('spark.driver.host', 'spark-driver'),
-    ('spark.kubernetes.driver.pod.name', 'spark-driver'),
-    ('spark.driver.port', '30001'),
-    ('spark.driver.blockManager.port', '30002'),
-    # add this to communicate with elastic
-    ('spark.jars', './spark-jars/elasticsearch-hadoop-7.11.1.jar'),
-])
+spark_conf.setAll(settings.spark_settings)
 
 sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
 
@@ -39,26 +20,25 @@ q = """{
 }"""
 
 es_read_conf = {
-    "es.nodes" : "elasticsearch",
-    "es.port" : "9200",
-    "es.resource" : "tweets/_doc",
+    **settings.es_cluster_settings,
+    "es.resource" : settings.es_resource_names.read_resource,
     "es.query" : q
 }
 
 retrieved_tweets = sc.newAPIHadoopRDD(
-    inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
-    keyClass="org.apache.hadoop.io.NullWritable",
-    valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
-    conf=es_read_conf)
+    inputFormatClass=settings.hadoop_class_settings.inputFormatClass,
+    keyClass=settings.hadoop_class_settings.keyClass,
+    valueClass=settings.hadoop_class_settings.valueClass,
+    conf=es_read_conf
+)
 
 
-print(f"got ${retrieved_tweets.count()} tweets")
+print(f"got {retrieved_tweets.count()} tweets")
 
 es_write_conf = {
-    "es.nodes" : 'elasticsearch',
-    "es.port" : '9200',
-    "es.resource" : '%s/%s' % ('tweet_numbers', 'tweet_num'),
-    "es.input.json": 'true'
+    **settings.es_cluster_settings,
+    "es.resource" : settings.es_resource_names.write_resource,
+    "es.input.json": "true"
 }
 
 tweet_numbers = sc.parallelize([{'tweet_num': i} for i in range(retrieved_tweets.count())])
@@ -76,10 +56,10 @@ tweet_nums_rdd = tweet_numbers.map(remove__id).map(json.dumps).map(lambda x: ('k
 print("Writing to es cluster...")
 
 tweet_nums_rdd.saveAsNewAPIHadoopFile(
-    path='-',
-    outputFormatClass="org.elasticsearch.hadoop.mr.EsOutputFormat",
-    keyClass="org.apache.hadoop.io.NullWritable",
-    valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
+    path=settings.hadoop_class_settings.path,
+    outputFormatClass=settings.hadoop_class_settings.inputFormatClass,
+    keyClass=settings.hadoop_class_settings.keyClass,
+    valueClass=settings.hadoop_class_settings.valueClass,
     conf=es_write_conf
 )
 
