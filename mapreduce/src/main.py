@@ -1,4 +1,3 @@
-import json
 import pyspark
 import settings
 
@@ -6,15 +5,14 @@ import settings
 class SparkDriver(object):
 
     def __init__(self):
+        # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
         session_builder = pyspark.sql.SparkSession.builder
         session_builder.config(conf = self.spark_conf)
-        # add the cluster settings for elasticsearch as well
-        # session_builder.config("es.nodes", settings.es_cluster_settings["es.nodes"])
-        # session_builder.config("es.port", settings.es_cluster_settings["es.port"])
-
+        # create the actual spark session
         self.spark_session = session_builder.getOrCreate()
+        # print some helpful information
         print("Configured Spark and Spark Driver")
         print(f"Running PySpark version {self.spark_session.version}")
 
@@ -31,24 +29,12 @@ class SparkDriver(object):
           }
         }"""
 
-        # es_read_conf = {
-        #     **settings.es_cluster_settings,
-        #     "es.resource": settings.es_resource_names["read_resource"],
-        #     "es.query": q
-        # }
-
         print("Getting tweets from Elasticsearch...")
-
-        # retrieved_tweets = self.spark_session.newAPIHadoopRDD(
-        #     inputFormatClass = settings.hadoop_class_settings["inputFormatClass"],
-        #     keyClass = settings.hadoop_class_settings["keyClass"],
-        #     valueClass = settings.hadoop_class_settings["valueClass"],
-        #     conf = es_read_conf
-        # )
 
         retrieved_tweets = self.spark_session.read.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\
+            .option("es.query", q)\
             .load("tweets/_doc")
 
         print(f"Got {retrieved_tweets.count()} tweets")
@@ -57,14 +43,15 @@ class SparkDriver(object):
 
 
     def process_tweets(self, tweets):
+        # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
         tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i} for i in range(tweets.count())])
-        # tweet_nums_json = tweet_numbers.map(lambda x: x.pop("_id", "")).map(json.dumps).map(lambda x: ("key", x))
 
         return tweet_numbers
 
 
     def store_processed_tweets(self, processed_tweets):
         print("Writing to es cluster...")
+        # write to elasticsearch on the set ip (node), port, and index (resource)
         processed_tweets.write.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\

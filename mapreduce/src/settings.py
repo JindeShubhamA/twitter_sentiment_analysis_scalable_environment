@@ -1,3 +1,4 @@
+# general spark settings
 spark_settings = [
     ("spark.master", "spark://spark-leader:7077"),
     ("spark.app.name", "Historical Tweet Processor"),
@@ -17,16 +18,19 @@ spark_settings = [
     ("spark.jars", "./spark-jars/elasticsearch-hadoop-7.11.1.jar"),
 ]
 
+# settings related to connecting to elasticsearch
 es_cluster_settings = {
     "es.nodes" : "elasticsearch",
     "es.port" : "9200"
 }
 
+# settings related to the resources in elasticsearch
 es_resource_names = {
     "read_resource": "tweets/_doc",
     "write_resource": "tweet_numbers/num"
 }
 
+# hadoop settings (these are currently unused, were used for RDD stuff)
 hadoop_class_settings = {
     "inputFormatClass": "org.elasticsearch.hadoop.mr.EsInputFormat",
     "outputFormatClass": "org.elasticsearch.hadoop.mr.EsOutputFormat",
