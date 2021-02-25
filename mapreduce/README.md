@@ -12,30 +12,27 @@ Follow the steps from this README inside the ``mapreduce`` directory (unless oth
 # How to run
 
 ## Running the Spark cluster
-If you've made any changes to the cluster configuration, run:
+In kubernetes:
 ```
-./build-spark-kube.sh
-```
-Either way, run this next:
-```
-./start-spark-kube.sh
+kubectl apply -f spark-kube
 ```
 
-This will (build and) pull all necessary images for the Spark master and worker, start minikube, 
-and launch the cluster onto Kubernetes according to ``spark-compose.yml``
+In docker-compose:
+```
+docker-compose -f spark-compose.yml up
+```
 
 ## Running the Spark driver
-If you've made changes to the driver configuration or code, run:
+In kubernetes:
 ```
-./build-mapreduce-kube.sh
-```
-Either way, run this next:
-```
-./start-mapreduce-kube.sh
+kubectl apply -f mapreduce-kube
 ```
 
-This will (build and) pull all necessary images for the Spark driver, start minikube, 
-and launch the cluster onto Kubernetes according to ``mapreduce-compose.yml``
+In docker-compose:
+```
+docker-compose -f mapreduce-compose.yml up
+```
+
 
 (In the current state, the driver simply submits one job and exits, 
 which causes it to be respawned by Kubernetes, submit one job, exit, et cetera ad infinitum)
