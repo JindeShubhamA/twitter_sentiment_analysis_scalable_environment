@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spark-driver
+  name: spark-driver
+spec:
+  ports:
+    - name: "jupyter"
+      port: 8888
+      targetPort: 8888
+    - name: "30001"
+      port: 30001
+    - name: "30002"
+      port: 30002
+      targetPort: 30002
+  selector:
+    app: spark-driver
+status:
+  loadBalancer: {}
