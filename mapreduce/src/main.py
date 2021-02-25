@@ -2,65 +2,78 @@ import json
 import pyspark
 import settings
 
-spark_conf = pyspark.SparkConf()
-spark_conf.setAll(settings.spark_settings)
 
-sc = pyspark.SparkContext(conf=spark_conf).getOrCreate()
+class SparkDriver(object):
 
-print("configured spark")
-
-q = """{
-  "query": { 
-    "bool": { 
-      "must": [
-        { "match": { "user_id": "16217679" }}
-      ]
-    }
-  }
-}"""
-
-es_read_conf = {
-    **settings.es_cluster_settings,
-    "es.resource" : settings.es_resource_names.read_resource,
-    "es.query" : q
-}
-
-retrieved_tweets = sc.newAPIHadoopRDD(
-    inputFormatClass=settings.hadoop_class_settings.inputFormatClass,
-    keyClass=settings.hadoop_class_settings.keyClass,
-    valueClass=settings.hadoop_class_settings.valueClass,
-    conf=es_read_conf
-)
+    def __init__(self):
+        self.spark_conf = pyspark.SparkConf()
+        self.spark_conf.setAll(settings.spark_settings)
+        self.spark_context = pyspark.SparkContext(conf = self.spark_conf).getOrCreate()
+        print("Configured Spark and Spark Driver")
 
 
-print(f"got {retrieved_tweets.count()} tweets")
+    def read_es(self):
+        # for now the query is just static, but this could be updated in a loop for example
+        q = """{
+          "query": { 
+            "bool": { 
+              "must": [
+                { "match": { "user_id": "16217679" }}
+              ]
+            }
+          }
+        }"""
 
-es_write_conf = {
-    **settings.es_cluster_settings,
-    "es.resource" : settings.es_resource_names.write_resource,
-    "es.input.json": "true"
-}
+        es_read_conf = {
+            **settings.es_cluster_settings,
+            "es.resource": settings.es_resource_names.read_resource,
+            "es.query": q
+        }
 
-tweet_numbers = sc.parallelize([{'tweet_num': i} for i in range(retrieved_tweets.count())])
+        print("Getting tweets from Elasticsearch...")
 
-def remove__id(doc):
-    # `_id` field needs to be removed from the document
-    # to be indexed, else configure this in `conf` while
-    # calling the `saveAsNewAPIHadoopFile` API
-    doc.pop('_id', '')
-    return doc
+        retrieved_tweets = self.spark_context.newAPIHadoopRDD(
+            inputFormatClass = settings.hadoop_class_settings.inputFormatClass,
+            keyClass = settings.hadoop_class_settings.keyClass,
+            valueClass = settings.hadoop_class_settings.valueClass,
+            conf = es_read_conf
+        )
+
+        print(f"Got {retrieved_tweets.count()} tweets")
+
+        return retrieved_tweets
 
 
-tweet_nums_rdd = tweet_numbers.map(remove__id).map(json.dumps).map(lambda x: ('key', x))
+    def process_tweets(self, tweets):
+        tweet_numbers = self.spark_context.parallelize([{"tweet_num": i} for i in range(tweets.count())])
+        tweet_nums_json = tweet_numbers.map(lambda x: x.pop("_id", "")).map(json.dumps).map(lambda x: ("key", x))
 
-print("Writing to es cluster...")
+        return tweet_nums_json
 
-tweet_nums_rdd.saveAsNewAPIHadoopFile(
-    path=settings.hadoop_class_settings.path,
-    outputFormatClass=settings.hadoop_class_settings.inputFormatClass,
-    keyClass=settings.hadoop_class_settings.keyClass,
-    valueClass=settings.hadoop_class_settings.valueClass,
-    conf=es_write_conf
-)
 
-print("Done!")
+    def store_processed_tweets(self, processed_tweets):
+        es_write_conf = {
+            **settings.es_cluster_settings,
+            "es.resource": settings.es_resource_names.write_resource,
+            "es.input.json": "true"
+        }
+
+        print("Writing to es cluster...")
+        processed_tweets.saveAsNewAPIHadoopFile(
+            path = settings.hadoop_class_settings.path,
+            outputFormatClass = settings.hadoop_class_settings.inputFormatClass,
+            keyClass = settings.hadoop_class_settings.keyClass,
+            valueClass = settings.hadoop_class_settings.valueClass,
+            conf = es_write_conf
+        )
+
+        print("Done!")
+
+
+
+if __name__ == "__main__":
+    spark_driver = SparkDriver()
+
+    r_tweets = spark_driver.read_es()
+    p_tweets = spark_driver.process_tweets(r_tweets)
+    spark_driver.store_processed_tweets(p_tweets)
