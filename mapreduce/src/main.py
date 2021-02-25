@@ -8,8 +8,15 @@ class SparkDriver(object):
     def __init__(self):
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
-        self.spark_context = pyspark.SparkContext(conf = self.spark_conf).getOrCreate()
+        session_builder = pyspark.sql.SparkSession.builder
+        session_builder.config(conf = self.spark_conf)
+        # add the cluster settings for elasticsearch as well
+        # session_builder.config("es.nodes", settings.es_cluster_settings["es.nodes"])
+        # session_builder.config("es.port", settings.es_cluster_settings["es.port"])
+
+        self.spark_session = session_builder.getOrCreate()
         print("Configured Spark and Spark Driver")
+        print(f"Running PySpark version {self.spark_session.version}")
 
 
     def read_es(self):
@@ -24,20 +31,25 @@ class SparkDriver(object):
           }
         }"""
 
-        es_read_conf = {
-            **settings.es_cluster_settings,
-            "es.resource": settings.es_resource_names.read_resource,
-            "es.query": q
-        }
+        # es_read_conf = {
+        #     **settings.es_cluster_settings,
+        #     "es.resource": settings.es_resource_names["read_resource"],
+        #     "es.query": q
+        # }
 
         print("Getting tweets from Elasticsearch...")
 
-        retrieved_tweets = self.spark_context.newAPIHadoopRDD(
-            inputFormatClass = settings.hadoop_class_settings.inputFormatClass,
-            keyClass = settings.hadoop_class_settings.keyClass,
-            valueClass = settings.hadoop_class_settings.valueClass,
-            conf = es_read_conf
-        )
+        # retrieved_tweets = self.spark_session.newAPIHadoopRDD(
+        #     inputFormatClass = settings.hadoop_class_settings["inputFormatClass"],
+        #     keyClass = settings.hadoop_class_settings["keyClass"],
+        #     valueClass = settings.hadoop_class_settings["valueClass"],
+        #     conf = es_read_conf
+        # )
+
+        retrieved_tweets = self.spark_session.read.format("es")\
+            .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
+            .option("es.port", settings.es_cluster_settings["es.port"])\
+            .load("tweets/_doc")
 
         print(f"Got {retrieved_tweets.count()} tweets")
 
@@ -45,27 +57,19 @@ class SparkDriver(object):
 
 
     def process_tweets(self, tweets):
-        tweet_numbers = self.spark_context.parallelize([{"tweet_num": i} for i in range(tweets.count())])
-        tweet_nums_json = tweet_numbers.map(lambda x: x.pop("_id", "")).map(json.dumps).map(lambda x: ("key", x))
+        tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i} for i in range(tweets.count())])
+        # tweet_nums_json = tweet_numbers.map(lambda x: x.pop("_id", "")).map(json.dumps).map(lambda x: ("key", x))
 
-        return tweet_nums_json
+        return tweet_numbers
 
 
     def store_processed_tweets(self, processed_tweets):
-        es_write_conf = {
-            **settings.es_cluster_settings,
-            "es.resource": settings.es_resource_names.write_resource,
-            "es.input.json": "true"
-        }
-
         print("Writing to es cluster...")
-        processed_tweets.saveAsNewAPIHadoopFile(
-            path = settings.hadoop_class_settings.path,
-            outputFormatClass = settings.hadoop_class_settings.inputFormatClass,
-            keyClass = settings.hadoop_class_settings.keyClass,
-            valueClass = settings.hadoop_class_settings.valueClass,
-            conf = es_write_conf
-        )
+        processed_tweets.write.format("es")\
+            .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
+            .option("es.port", settings.es_cluster_settings["es.port"])\
+            .option("es.resource", settings.es_resource_names["write_resource"])\
+            .save()
 
         print("Done!")
 

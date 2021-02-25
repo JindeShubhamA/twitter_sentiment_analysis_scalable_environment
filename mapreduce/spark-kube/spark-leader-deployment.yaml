@@ -35,7 +35,7 @@ spec:
               value: "no"
             - name: SPARK_SSL_ENABLED
               value: "no"
-          image: docker.io/bitnami/spark:3.0.1
+          image: docker.io/bitnami/spark:2.4.6
           name: spark-leader
           ports:
             - containerPort: 8080

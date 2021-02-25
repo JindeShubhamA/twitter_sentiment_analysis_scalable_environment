@@ -1,20 +1,20 @@
 spark_settings = [
-    ('spark.master', "spark://spark-leader:7077"),
-    ('spark.app.name', 'TestingSpark'),
+    ("spark.master", "spark://spark-leader:7077"),
+    ("spark.app.name", "Historical Tweet Processor"),
     # client mode should be better if the driver and the workers are on the same network
     # (since they are on the same docker network, this seems appropriate)
-    ('spark.submit.deployMode', 'client'),
-    ('spark.ui.showConsoleProgress', 'true'),
-    ('spark.eventLog.enabled', 'false'),
-    ('spark.logConf', 'false'),
+    ("spark.submit.deployMode", "client"),
+    ("spark.ui.showConsoleProgress", "true"),
+    ("spark.eventLog.enabled", "false"),
+    ("spark.logConf", "false"),
     # these are important for spark to communicate back to us
-    ('spark.driver.bindAddress', '0.0.0.0'),
-    ('spark.driver.host', 'spark-driver'),
-    ('spark.kubernetes.driver.pod.name', 'spark-driver'),
-    ('spark.driver.port', '30001'),
-    ('spark.driver.blockManager.port', '30002'),
+    ("spark.driver.bindAddress", "0.0.0.0"),
+    ("spark.driver.host", "spark-driver"),
+    ("spark.kubernetes.driver.pod.name", "spark-driver"),
+    ("spark.driver.port", "30001"),
+    ("spark.driver.blockManager.port", "30002"),
     # add this to communicate with elastic
-    ('spark.jars', './spark-jars/elasticsearch-hadoop-7.11.1.jar'),
+    ("spark.jars", "./spark-jars/elasticsearch-hadoop-7.11.1.jar"),
 ]
 
 es_cluster_settings = {
@@ -24,7 +24,7 @@ es_cluster_settings = {
 
 es_resource_names = {
     "read_resource": "tweets/_doc",
-    "write_resource": ""
+    "write_resource": "tweet_numbers/num"
 }
 
 hadoop_class_settings = {
