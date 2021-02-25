@@ -4,18 +4,18 @@ metadata:
   name: es-cluster
   namespace: default
 spec:
-  serviceName: elasticsearch-proc
-  replicas: 2
+  serviceName: elasticsearch
+  replicas: 3
   selector:
     matchLabels:
-      app: elasticsearch-proc
+      app: elasticsearch
   template:
     metadata:
       labels:
-        app: elasticsearch-proc
+        app: elasticsearch
     spec:
       containers:
-      - name: elasticsearch-proc
+      - name: elasticsearch
         image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
         resources:
           limits:
@@ -40,7 +40,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name # i.e es-cluster
           - name: discovery.seed_hosts
-            value: "es-cluster-0.elasticsearch-proc,es-cluster-1.elasticsearch-proc,es-cluster-2.elasticsearch-proc"
+            value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch,es-cluster-2.elasticsearch"
           - name: cluster.initial_master_nodes
             value: "es-cluster-0,es-cluster-1,es-cluster-2"
           - name: ES_JAVA_OPTS
@@ -68,7 +68,7 @@ spec:
   - metadata:
       name: data
       labels:
-        app: elasticsearch-proc
+        app: elasticsearch
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: fast
@@ -76,11 +76,11 @@ spec:
         requests:
           storage: 1Gi
 
-# ---
-# apiVersion: storage.k8s.io/v1
-# kind: StorageClass
-# metadata:
-#   name: fast
-# provisioner: k8s.io/minikube-hostpath
-# parameters:
-#   type: pd-ssd
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast
+provisioner: k8s.io/minikube-hostpath
+parameters:
+  type: pd-ssd
