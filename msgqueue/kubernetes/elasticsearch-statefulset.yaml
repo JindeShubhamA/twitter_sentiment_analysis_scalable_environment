@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: es-cluster
+  name: elasticsearch
   namespace: default
 spec:
   serviceName: elasticsearch
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: elasticsearch
@@ -34,13 +34,13 @@ spec:
           mountPath: /usr/share/elasticsearch/data
         env:
           - name: cluster.name
-            value: es-raw-data
+            value: elasticsearch
           - name: node.name
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name # i.e es-cluster
           - name: discovery.seed_hosts
-            value: "es-cluster-0.elasticsearch-raw,es-cluster-1.elasticsearch-raw,es-cluster-2.elasticsearch-raw"
+            value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch,es-cluster-2.elasticsearch"
           - name: cluster.initial_master_nodes
             value: "es-cluster-0,es-cluster-1,es-cluster-2"
           - name: ES_JAVA_OPTS
@@ -64,17 +64,23 @@ spec:
         command: ["sh", "-c", "ulimit -n 65536"]
         securityContext:
           privileged: true
-      volumes:
-      - name: elastic-pd
-        persistentVolumeClaim:
-          claimName: elastic-pvc
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: elasticsearch
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: fast
+      resources:
+        requests:
+          storage: 1Gi
 
-
-#---
-#apiVersion: storage.k8s.io/v1
-#kind: StorageClass
-#metadata:
-#  name: fast
-#provisioner: k8s.io/minikube-hostpath
-#parameters:
-#  type: pd-ssd
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast
+provisioner: k8s.io/minikube-hostpath
+parameters:
+  type: pd-ssd

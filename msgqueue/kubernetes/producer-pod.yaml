@@ -11,8 +11,9 @@ metadata:
   name: producer
 spec:
   containers:
-    - image: sjinde/scalable:producer
+    - image: sjinde/scalable:producer_01
       name: producer
+      imagePullPolicy: Never
       resources: {}
   restartPolicy: OnFailure
 status: {}
