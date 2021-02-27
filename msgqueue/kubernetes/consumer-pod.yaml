@@ -11,7 +11,7 @@ metadata:
   name: consumer
 spec:
   containers:
-    - image: consumer
+    - image: sjinde/scalable:consumer
       name: consumer
       resources: {}
   restartPolicy: OnFailure
