@@ -77,7 +77,7 @@ spec:
             - name: KAFKA_JMX_PORT
               value: "5555"
             - name: KAFKA_CREATE_TOPICS
-              value: "testtopic:1:1"
+              value: "topic_test:1:1"
           image: confluentinc/cp-kafka:4.1.2-2
           imagePullPolicy: IfNotPresent
           livenessProbe:
