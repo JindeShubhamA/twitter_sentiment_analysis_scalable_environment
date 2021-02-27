@@ -18,7 +18,7 @@ services:
   producer:
     build:
       context: ./python_code
-      dockerfile: Dockerfile_producer
+      dockerfile: sjinde/scalable:producer
     container_name: producer
     depends_on:
       - elasticsearch
@@ -33,7 +33,7 @@ services:
   consumer:
     build:
       context: ./python_code
-      dockerfile: Dockerfile_consumer
+      dockerfile: sjinde/scalable:consumer
     depends_on:
       - kafka
     links:
