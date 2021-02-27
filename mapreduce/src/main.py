@@ -6,12 +6,13 @@ import os
 class SparkDriver(object):
 
     def __init__(self):
-        # determine if we are in kube or not
+        # determine if we are in kubernetes or not
         kube_mode = os.environ.get(settings.kube_mode_check) == "true"
         # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
-
+        # if we are not inside kubernetes, that means we likely won't have access to the elasticsearch nodes
+        # so we change some settings that allow us to communicate with elasticsearch across different networks
         if not kube_mode:
             self.spark_conf.set("spark.es.nodes.discovery", False)
             self.spark_conf.set("spark.es.nodes.wan.only", True)
@@ -21,8 +22,9 @@ class SparkDriver(object):
         # create the actual spark session
         self.spark_session = session_builder.getOrCreate()
         # print some helpful information
-        print("Configured Spark and Spark Driver")
-        print(f"Running PySpark in {'kubernetes' if kube_mode else 'local'} mode (version {self.spark_session.version})")
+        print("Configured Spark and Spark driver")
+        print(f"Spark driver is in {'kubernetes' if kube_mode else 'local'} mode")
+        print(f"Running PySpark version {self.spark_session.version}")
 
 
     def read_es(self):

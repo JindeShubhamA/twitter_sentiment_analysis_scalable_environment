@@ -38,7 +38,7 @@ Locally (i.e. without a Spark cluster):
 python3 ./src/main.py
 ```
 In this case you have to have Spark 2.4.6 installed locally, together with Python 3.6 (higher may be incompatible).
-Elasticsearch needs to be running on localhost:9200 (or in Kubernetes and port forward 9200).
+Elasticsearch needs to be reachable on localhost:9200 (by running it locally or in Kubernetes and port forward 9200).
 
 
 (In the current state, the driver simply submits one job and exits, 

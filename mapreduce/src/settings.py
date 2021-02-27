@@ -1,5 +1,6 @@
 import os
 
+# the environment variable that will be set to "true" in the kubernetes containers
 kube_mode_check = "RUNNING_AS_KUBE_DEPLOYMENT"
 
 # general spark settings
@@ -18,13 +19,13 @@ spark_settings = [
     ("spark.kubernetes.driver.pod.name", "spark-driver"),
     ("spark.driver.port", "30001"),
     ("spark.driver.blockManager.port", "30002"),
-    # add this to communicate with elastic
+    # add this jar to communicate with elasticsearch
     ("spark.jars", "./spark-jars/elasticsearch-hadoop-7.11.1.jar"),
 ]
 
 # settings related to connecting to elasticsearch
 es_cluster_settings = {
-    "es.nodes" : "elasticsearch" if os.environ.get(kube_mode_check) == "true" else "127.0.0.1",
+    "es.nodes" : "elasticsearch" if os.environ.get(kube_mode_check) == "true" else "localhost",
     "es.port" : "9200"
 }
 
