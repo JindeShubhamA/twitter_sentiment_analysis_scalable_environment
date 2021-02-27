@@ -4,3 +4,4 @@ venv
 elasticsearch-raw/data
 /dataset/
 elasticsearch/data/
+*.pyc

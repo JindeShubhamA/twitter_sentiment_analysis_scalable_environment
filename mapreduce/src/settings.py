@@ -1,6 +1,10 @@
+import os
+
+kube_mode_check = "RUNNING_AS_KUBE_DEPLOYMENT"
+
 # general spark settings
 spark_settings = [
-    ("spark.master", "spark://spark-leader:7077"),
+    ("spark.master", "spark://spark-leader:7077" if os.environ.get(kube_mode_check) == "true" else "local[2]"),
     ("spark.app.name", "Historical Tweet Processor"),
     # client mode should be better if the driver and the workers are on the same network
     # (since they are on the same docker network, this seems appropriate)
@@ -10,7 +14,7 @@ spark_settings = [
     ("spark.logConf", "false"),
     # these are important for spark to communicate back to us
     ("spark.driver.bindAddress", "0.0.0.0"),
-    ("spark.driver.host", "spark-driver"),
+    ("spark.driver.host", "spark-driver" if os.environ.get(kube_mode_check) == "true" else "localhost"),
     ("spark.kubernetes.driver.pod.name", "spark-driver"),
     ("spark.driver.port", "30001"),
     ("spark.driver.blockManager.port", "30002"),
@@ -20,7 +24,7 @@ spark_settings = [
 
 # settings related to connecting to elasticsearch
 es_cluster_settings = {
-    "es.nodes" : "elasticsearch",
+    "es.nodes" : "elasticsearch" if os.environ.get(kube_mode_check) == "true" else "127.0.0.1",
     "es.port" : "9200"
 }
 

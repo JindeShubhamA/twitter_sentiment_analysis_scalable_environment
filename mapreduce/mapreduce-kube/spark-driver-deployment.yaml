@@ -30,6 +30,9 @@ spec:
             - containerPort: 30001
             - containerPort: 30002
           resources: {}
+          env: 
+            - name: RUNNING_AS_KUBE_DEPLOYMENT
+              value: "true"
       hostname: spark-driver
       restartPolicy: Always
 status: {}

@@ -1,20 +1,28 @@
 import pyspark
 import settings
+import os
 
 
 class SparkDriver(object):
 
     def __init__(self):
+        # determine if we are in kube or not
+        kube_mode = os.environ.get(settings.kube_mode_check) == "true"
         # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
+
+        if not kube_mode:
+            self.spark_conf.set("spark.es.nodes.discovery", False)
+            self.spark_conf.set("spark.es.nodes.wan.only", True)
+
         session_builder = pyspark.sql.SparkSession.builder
         session_builder.config(conf = self.spark_conf)
         # create the actual spark session
         self.spark_session = session_builder.getOrCreate()
         # print some helpful information
         print("Configured Spark and Spark Driver")
-        print(f"Running PySpark version {self.spark_session.version}")
+        print(f"Running PySpark in {'kubernetes' if kube_mode else 'local'} mode (version {self.spark_session.version})")
 
 
     def read_es(self):

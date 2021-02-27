@@ -45,6 +45,8 @@ spec:
             value: "es-cluster-0,es-cluster-1,es-cluster-2"
           - name: ES_JAVA_OPTS
             value: "-Xms512m -Xmx512m"
+          - name: HTTP_ENABLE
+            value: "true"
       initContainers:
       - name: fix-permissions
         image: busybox
