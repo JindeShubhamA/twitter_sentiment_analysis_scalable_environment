@@ -34,7 +34,7 @@ spec:
           mountPath: /usr/share/elasticsearch/data
         env:
           - name: cluster.name
-            value: es-raw-data
+            value: elasticsearch
           - name: node.name
             valueFrom:
               fieldRef:

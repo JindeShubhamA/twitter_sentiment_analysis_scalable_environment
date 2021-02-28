@@ -1,0 +1,7 @@
+FROM python:3.6
+WORKDIR /usr/src/app
+COPY . .
+RUN pip3 install --upgrade pip
+RUN pip3 install elasticsearch
+CMD ["es_populate.py"]
+ENTRYPOINT [ "python3" ]

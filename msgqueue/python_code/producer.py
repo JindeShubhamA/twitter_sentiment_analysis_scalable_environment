@@ -6,10 +6,10 @@ from es.model import esDriver
 from kafka import KafkaProducer
 # print("here")
 es = esDriver()
-#
-es.create()
 # #
-es.populate('tweet_data_500k.csv')
+# es.create()
+# # #
+# es.populate('tweet_data_500k.csv')
 #
 es_response = list(es.scanAll())
 print(es_response)
@@ -17,7 +17,7 @@ print(es_response)
 #es_response = list(es_response['hits']['hits'])
 
 producer = KafkaProducer(
-    bootstrap_servers=['kafka:9093'],
+    bootstrap_servers=['kafka:9092'],
     value_serializer=lambda x: dumps(x).encode('utf-8')
 )
 #
