@@ -5,7 +5,7 @@ from time import sleep
 print("Starting Consumer")
 consumer = KafkaConsumer(
     'topic_test',
-    bootstrap_servers=['kafka:9093'],
+    bootstrap_servers=['kafka:9092'],
     auto_offset_reset='earliest',
     enable_auto_commit=True,
     group_id='my-group-id',

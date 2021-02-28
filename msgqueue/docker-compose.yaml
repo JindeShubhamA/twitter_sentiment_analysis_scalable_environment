@@ -43,6 +43,15 @@ services:
     networks:
     - msgqueue
 
+  populate_db:
+    build:
+      context: ./python_code
+      dockerfile: Dockerfile_populate
+    container_name: populate_db
+    networks:
+      - msgqueue
+    restart: on-failure
+
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
     ports:
