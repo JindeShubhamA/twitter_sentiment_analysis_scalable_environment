@@ -45,8 +45,8 @@ es.indices.create(index='tweets', body=settings_body, ignore=400, timeout=300)
 print('Done!')
 
 print('Updating mapping...')
-es.indices.put_mapping(body=mappings_body, index='tweets')
-print('Done!')
+# es.indices.put_mapping(body=mappings_body, index='tweets')
+# print('Done!')
 
 
 print('Populating database...')
