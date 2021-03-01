@@ -5,7 +5,7 @@ kube_mode_check = "RUNNING_AS_KUBE_DEPLOYMENT"
 
 # general spark settings
 spark_settings = [
-    ("spark.master", "spark://spark-leader:7077" if os.environ.get(kube_mode_check) == "true" else "local[2]"),
+    ("spark.master", "spark://spark-leader:7077" if os.environ.get(kube_mode_check) == "true" else "local[4]"),
     ("spark.app.name", "Historical Tweet Processor"),
     # client mode should be better if the driver and the workers are on the same network
     # (since they are on the same docker network, this seems appropriate)
