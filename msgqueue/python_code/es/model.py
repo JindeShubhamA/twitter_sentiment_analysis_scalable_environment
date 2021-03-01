@@ -23,6 +23,7 @@ class esDriver(object):
 
     def scanAll(self):
         query = settings.query
+        data = []
         try:
             # result = Elasticsearch.explain(self.es, index="tweets", id=12345, body=query)
             # print(json.dumps(result, indent=4))
