@@ -45,7 +45,7 @@ class SparkDriver(object):
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\
             .option("es.query", q)\
-            .load("tweets/_doc")
+            .load(settings.es_resource_names["read_resource"])
 
         print(f"Got {retrieved_tweets.count()} tweets")
 
@@ -54,18 +54,21 @@ class SparkDriver(object):
 
     def process_tweets(self, tweets):
         # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
-        tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i} for i in range(tweets.count())])
+        tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
 
         return tweet_numbers
 
 
     def store_processed_tweets(self, processed_tweets):
-        print("Writing to es cluster...")
+        print("Writing to es cluster...", processed_tweets)
         # write to elasticsearch on the set ip (node), port, and index (resource)
         processed_tweets.write.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\
-            .option("es.resource", settings.es_resource_names["write_resource"])\
+            .option("es.resource", settings.es_resource_names["write_resource"]) \
+            .option("es.write.operation", settings.es_cluster_settings["es.write.operation"])\
+            .option("es.mapping.id", settings.es_cluster_settings["es.mapping.id"])\
+            .mode(settings.es_cluster_settings["mode"])\
             .save()
 
         print("Done!")

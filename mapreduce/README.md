@@ -1,12 +1,12 @@
 # About
-Our mapreduce program uses pyspark for the computations. 
-The Spark cluster is set up to run each worker (and the master as well) in a separate container, which can communicate over a network ``spark-communication``.
-Any driver program that submits jobs to the Spark cluster should join this network to gain access to the cluster's API.
+Our mapreduce program uses PySpark for the computations. 
+The Spark cluster is set up to run each worker (and the master as well) in a separate container.
 
-It is available in docker-compose and kubernetes.
+It is available in docker-compose and Kubernetes.
 
 # Prerequisites
 First, make sure you have docker, docker-compose, and minikube installed. 
+If you want to run the driver outside a docker container, also make sure you have Spark 2.4.6, Java 8, and the pip requirements installed.
 Follow the steps from this README inside the ``mapreduce`` directory (unless otherwise specified).
 
 # How to run

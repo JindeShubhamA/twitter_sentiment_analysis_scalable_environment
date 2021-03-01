@@ -26,13 +26,17 @@ spark_settings = [
 # settings related to connecting to elasticsearch
 es_cluster_settings = {
     "es.nodes" : "elasticsearch" if os.environ.get(kube_mode_check) == "true" else "localhost",
-    "es.port" : "9200"
+    "es.port" : "9200",
+    "es.read.metadata": "true",
+    "es.write.operation": "upsert",
+    "es.mapping.id": "id",
+    "mode": "append"
 }
 
 # settings related to the resources in elasticsearch
 es_resource_names = {
-    "read_resource": "tweets/_doc",
-    "write_resource": "tweet_numbers/num"
+    "read_resource": "tweets",
+    "write_resource": "tweet_numbers"
 }
 
 # hadoop settings (these are currently unused, were used for RDD stuff)
