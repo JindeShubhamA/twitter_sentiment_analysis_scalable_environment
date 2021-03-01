@@ -1,3 +1,4 @@
 # using version 2.4.6 because 3.x apparently doesn't work with elasticsearch
 pyspark==2.4.6
-reverse_geocoder
+shapely
+pyshp

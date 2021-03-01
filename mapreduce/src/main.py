@@ -1,6 +1,7 @@
 import pyspark
 import settings
 import os
+from reverse_geocoder import ReverseGeocoder
 
 
 class SparkDriver(object):
@@ -33,7 +34,7 @@ class SparkDriver(object):
           "query": { 
             "bool": { 
               "must": [
-                { "match": { "user_id": "16217679" }}
+                { "match": { "user_id": "36229248" }}
               ]
             }
           }
@@ -53,8 +54,16 @@ class SparkDriver(object):
 
 
     def process_tweets(self, tweets):
+        tweets.show()
         # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
         tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
+
+        # do sentiment analysis
+        # TODO
+
+
+        # do reverse geocoding to get the 'average' sentiment per state
+        rg = ReverseGeocoder()
 
         return tweet_numbers
 
