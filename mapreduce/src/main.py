@@ -1,7 +1,37 @@
 import pyspark
 import settings
 import os
-from reverse_geocoder import ReverseGeocoder
+# from reverse_geocoder import ReverseGeocoder
+import shapefile
+from shapely.geometry import shape, Point
+import re
+from textblob import TextBlob
+
+
+def clean_tweet(tweet):
+    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w+:\ / \ / \S+)", " ", tweet).split())
+
+
+def get_tweet_sentiment(tweet):
+    analysis = TextBlob(clean_tweet(tweet))
+    if analysis.sentiment.polarity > 0:
+        return 1
+    else:
+        return 0
+
+def get_state(coord_string):
+    myshp = open("./shapefiles/us_states.shp", "rb")
+    mydbf = open("./shapefiles/us_states.dbf", "rb")
+    shp_reader = shapefile.Reader(shp=myshp, dbf=mydbf)
+    coords = coord_string.split(",")
+    # shapely requires the coordinates in this order
+    point = Point(float(coords[1]), float(coords[0]))
+
+    for index, shp in enumerate(shp_reader.shapes()):
+        s = shape(shp)
+        if s.contains(point):
+            # print("point is in:", self.shp_reader.record(index)["STUSPS"], self.shp_reader.record(index)["NAME"])
+            return str(shp_reader.record(index)["NAME"])
 
 
 class SparkDriver(object):
@@ -30,13 +60,19 @@ class SparkDriver(object):
 
     def read_es(self):
         # for now the query is just static, but this could be updated in a loop for example
+        # q = """{
+        #   "query": {
+        #     "bool": {
+        #       "must": [
+        #         { "match": { "user_id": "36229248" }}
+        #       ]
+        #     }
+        #   }
+        # }"""
         q = """{
-          "query": { 
-            "bool": { 
-              "must": [
-                { "match": { "user_id": "36229248" }}
-              ]
-            }
+          "from" : 0, "size" : 10000,
+          "query": {
+            "match_all": {}
           }
         }"""
 
@@ -56,16 +92,20 @@ class SparkDriver(object):
     def process_tweets(self, tweets):
         tweets.show()
         # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
-        tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
+        # tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
 
         # do sentiment analysis
-        # TODO
-
+        # reduces each tweet to a tuple (location, nr_positive_tweets)
+        reduced_tweets = tweets.rdd.map(lambda x: (x.location, get_tweet_sentiment(x.tweet)))\
+                                    .reduceByKey(lambda x, y: x + y)
+        print("1st mapreduce sample: ", reduced_tweets.take(10))
 
         # do reverse geocoding to get the 'average' sentiment per state
-        rg = ReverseGeocoder()
-
-        return tweet_numbers
+        # rg = ReverseGeocoder()
+        state_tweets = reduced_tweets.map(lambda x: (get_state(x[0]), x[1]))\
+            .reduceByKey(lambda x, y: x + y).collect()
+        print("2nd mapreduce: ", state_tweets)
+        #return tweet_numbers
 
 
     def store_processed_tweets(self, processed_tweets):
@@ -89,4 +129,4 @@ if __name__ == "__main__":
 
     r_tweets = spark_driver.read_es()
     p_tweets = spark_driver.process_tweets(r_tweets)
-    spark_driver.store_processed_tweets(p_tweets)
+    # spark_driver.store_processed_tweets(p_tweets)

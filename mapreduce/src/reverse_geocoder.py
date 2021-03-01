@@ -11,12 +11,24 @@ class ReverseGeocoder(object):
 
 
     # TODO: optimize the speed of this using some trees
-    def get_state_record(self, lat, lon):
+    # def get_state_record(self, lat, lon):
+    #     # shapely requires the coordinates in this order
+    #     point = Point(lon, lat)
+    #
+    #     for index, shp in enumerate(self.shp_reader.shapes()):
+    #         s = shape(shp)
+    #         if s.contains(point):
+    #             # print("point is in:", self.shp_reader.record(index)["STUSPS"], self.shp_reader.record(index)["NAME"])
+    #             return self.shp_reader.record(index)
+
+    #
+    def get_state_record(self, coord_string):
+        coords = coord_string.split(",")
         # shapely requires the coordinates in this order
-        point = Point(lon, lat)
+        point = Point(float(coords[1]), float(coords[0]))
 
         for index, shp in enumerate(self.shp_reader.shapes()):
             s = shape(shp)
             if s.contains(point):
                 # print("point is in:", self.shp_reader.record(index)["STUSPS"], self.shp_reader.record(index)["NAME"])
-                return self.shp_reader.record(index)
+                return str(self.shp_reader.record(index)["NAME"])

@@ -2,3 +2,4 @@
 pyspark==2.4.6
 shapely
 pyshp
+textblob
