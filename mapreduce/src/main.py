@@ -2,8 +2,7 @@ import pyspark
 import settings
 import os
 from reverse_geocoder import ReverseGeocoder
-import re
-from textblob import TextBlob
+from tweet_processing import *
 
 
 def clean_tweet(tweet):
@@ -57,21 +56,21 @@ class SparkDriver(object):
 
     def read_es(self):
         # for now the query is just static, but this could be updated in a loop for example
-        # q = """{
-        #   "query": {
-        #     "bool": {
-        #       "must": [
-        #         { "match": { "user_id": "36229248" }}
-        #       ]
-        #     }
-        #   }
-        # }"""
         q = """{
-          "from" : 0, "size" : 10000,
           "query": {
-            "match_all": {}
+            "bool": {
+              "must": [
+                { "match": { "user_id": "36229248" }}
+              ]
+            }
           }
         }"""
+        # q = """{
+        #   "from" : 0, "size" : 10000,
+        #   "query": {
+        #     "match_all": {}
+        #   }
+        # }"""
 
         print("Getting tweets from Elasticsearch...")
 
@@ -95,7 +94,7 @@ class SparkDriver(object):
         # reduces each tweet to a tuple (location, nr_positive_tweets)
         reduced_tweets = tweets.rdd.map(lambda x: (x.location, get_tweet_sentiment(x.tweet)))\
                                     .reduceByKey(lambda x, y: x + y)
-        print("1st mapreduce sample: ", reduced_tweets.take(10))
+        print("1st mapreduce: ", reduced_tweets.take(10))
 
         # create a search tree and broadcast it to the workers
         tree = ReverseGeocoder.create_tree()
