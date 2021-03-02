@@ -1,18 +1,21 @@
 import shapefile
 from shapely.geometry import shape, Point
+from search_tree import SearchTree
 
 
 class ReverseGeocoder(object):
 
     def __init__(self):
-        myshp = open("./large-shapefiles/us_states.shp", "rb")
-        mydbf = open("./large-shapefiles/us_states.dbf", "rb")
+        myshp = open("./shapefiles/us_states.shp", "rb")
+        mydbf = open("./shapefiles/us_states.dbf", "rb")
         self.shp_reader = shapefile.Reader(shp=myshp, dbf=mydbf)
 
         unsorted = [
             {"shape": shape(x), "bounds": shape(x).bounds, "record": self.shp_reader.record(index)}
             for index, x in enumerate(self.shp_reader.shapes())
         ]
+
+        self.search_tree = SearchTree(self.shp_reader.shapes(), self.shp_reader.records())
 
         # use a variable to store the index that represents the maximum longitude in a bounding box tuple
         self.max_lon_ind = 2
@@ -64,9 +67,14 @@ class ReverseGeocoder(object):
         coords = coord_string.split(",")
         return self.get_state_by_coords(coords[0], coords[1])
 
+
+    def get_from_tree(self, lat, lon):
+        return self.search_tree.find_by_coord(lat, lon)
                
 
 if __name__ == "__main__":
     rg = ReverseGeocoder()
-    print(rg.get_state_by_coords(37.241979000000015,-115.81718400000003))
+    # print(rg.search_tree.tree.left_child, rg.search_tree.tree.right_child)
+    print("by coords:", rg.get_state_by_coords(37.241979000000015,-115.81718400000003))
+    print("by tree:", rg.get_from_tree(37.241979000000015,-115.81718400000003))
 
