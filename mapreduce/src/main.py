@@ -6,7 +6,7 @@ import settings
 # from reverse_geocoder import ReverseGeocoder
 from tweet_processing import *
 
-
+# temp function until geocoder is working
 def get_state(coord_string):
     myshp = open("./shapefiles/us_states.shp", "rb")
     mydbf = open("./shapefiles/us_states.dbf", "rb")
