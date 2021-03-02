@@ -1,24 +1,11 @@
 import pyspark
-import settings
 import os
-# from reverse_geocoder import ReverseGeocoder
 import shapefile
 from shapely.geometry import shape, Point
-import re
-from textblob import TextBlob
+import settings
+# from reverse_geocoder import ReverseGeocoder
+from tweet_processing import *
 
-
-def clean_tweet(tweet):
-    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w+:\ / \ / \S+)", " ", tweet).split())
-
-
-def get_tweet_sentiment(tweet):
-    analysis = TextBlob(clean_tweet(tweet))
-    return analysis.sentiment.polarity
-    if analysis.sentiment.polarity > 0:
-        return 1
-    else:
-        return 0
 
 def get_state(coord_string):
     myshp = open("./shapefiles/us_states.shp", "rb")
@@ -32,7 +19,7 @@ def get_state(coord_string):
         s = shape(shp)
         if s.contains(point):
             # print("point is in:", self.shp_reader.record(index)["STUSPS"], self.shp_reader.record(index)["NAME"])
-            return str(shp_reader.record(index)["NAME"])
+            return shp_reader.record(index)["State_Name"]
 
 
 class SparkDriver(object):
@@ -99,7 +86,7 @@ class SparkDriver(object):
         # reduces each tweet to a tuple (location, nr_positive_tweets)
         reduced_tweets = tweets.rdd.map(lambda x: (x.location, get_tweet_sentiment(x.tweet)))\
                                     .reduceByKey(lambda x, y: x + y)
-        print("1st mapreduce sample: ", reduced_tweets.take(10))
+        print("1st mapreduce: ", reduced_tweets.take(10))
 
         # do reverse geocoding to get the 'average' sentiment per state
         # rg = ReverseGeocoder()
