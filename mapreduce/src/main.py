@@ -48,21 +48,21 @@ class SparkDriver(object):
 
     def read_es(self):
         # for now the query is just static, but this could be updated in a loop for example
-        # q = """{
-        #   "query": {
-        #     "bool": {
-        #       "must": [
-        #         { "match": { "user_id": "36229248" }}
-        #       ]
-        #     }
-        #   }
-        # }"""
         q = """{
-          "from" : 0, "size" : 10000,
           "query": {
-            "match_all": {}
+            "bool": {
+              "must": [
+                { "match": { "user_id": "36229248" }}
+              ]
+            }
           }
         }"""
+        # q = """{
+        #   "from" : 0, "size" : 10000,
+        #   "query": {
+        #     "match_all": {}
+        #   }
+        # }"""
 
         print("Getting tweets from Elasticsearch...")
 
