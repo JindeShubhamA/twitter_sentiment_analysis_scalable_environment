@@ -1,4 +1,3 @@
-import collections
 import math
 from shapely.geometry import shape, Point
 
@@ -19,7 +18,7 @@ class SearchTree(object):
             self.axis = axis
 
 
-    def __init__(self, shapes, records, max_depth=None, max_leaf_size=2):
+    def __init__(self, shapes, records, max_depth=None, max_leaf_size=1):
         # we set the depth to the log of the length of shapes, plus 3 to allow the tree to spread a bit more
         # this will happen since we add boxes that are intersected by a split to both sides of the tree
         self.max_depth = math.log(len(shapes), 2) + 3 if max_depth is None else max_depth
@@ -34,8 +33,11 @@ class SearchTree(object):
 
 
     """
-    recursive function to create a search tree.
-    has a time complexity of n*log(n)
+    Recursive function to create a search tree.
+    
+    Has a time complexity of n*log(n)*log(n) = n^2, which isn't exactly great, however,
+    since this function only needs to be called once, and the tree will be queried many many times,
+    it is worth it to spend some more time to make the tree more efficient
     """
     def create_tree(self, items, axis, depth, max_depth, max_leaf_size):
         # base case, either the amount of items is less than the maximum amount of items per leaf,
@@ -45,17 +47,11 @@ class SearchTree(object):
 
         left_items = []
         right_items = []
-        max_axis_val = float("-inf")
-        min_axis_val = float("inf")
 
-        for item in items:
-            min_axis_val = min(min_axis_val, item["bounds"][axis])
-            # axis + 2 will get the other side of the box on the same axis;
-            # i.e. it will get the right side if [axis] is the left side,
-            # and it will get the top side if [axis] is the bottom side
-            max_axis_val = max(max_axis_val, item["bounds"][axis + 2])
-
-        split = (max_axis_val + min_axis_val) / 2
+        # the split is computed by taking the median value on the current axis
+        # this will (hopefully) create a fairly balanced tree
+        sorted_items = sorted(items, key=lambda x: x["bounds"][axis])
+        split = sorted_items[int(len(sorted_items) / 2)]["bounds"][axis]
 
         for item in items:
             # we explicitly allow the box to be added to the left and right side of this branch
@@ -72,17 +68,6 @@ class SearchTree(object):
 
         # flip the axis from 0 to 1 or from 1 to 0
         flipped_axis = (axis + 1) % 2
-
-        # print(split)
-        # print(len(left_items), left_items)
-        # # seen = set()
-        # # print("duplicates:", [x["record"] for x in left_items if x["bounds"] not in seen and not seen.add(x["bounds"])])
-        # print()
-        # print(len(right_items), right_items)
-        # # seen = set()
-        # # print("duplicates:", [x["record"] for x in right_items if x["bounds"] not in seen and not seen.add(x["bounds"])])
-        # print()
-        # print()
 
         return self.Node(
             self.create_tree(left_items, flipped_axis, depth+1, max_depth, max_leaf_size),
@@ -104,15 +89,13 @@ class SearchTree(object):
                 node = node.left_child
             else: node = node.right_child
 
-        # for debugging
-        print(f"sequentially searching through {len(node.items)} options")
-
         for item in node.items:
             if item["shape"].contains(point):
                 return item
 
-        return None
-
+        # return an empty object instead of None, so we can always access "item", "shape", and "record"
+        # even if they are useless
+        return {"item": None, "shape": None, "record": (None, None)}
 
 
     def find_by_string(self, coord_string):

@@ -1,9 +1,7 @@
 import pyspark
 import settings
 import os
-# from reverse_geocoder import ReverseGeocoder
-import shapefile
-from shapely.geometry import shape, Point
+from reverse_geocoder import ReverseGeocoder
 import re
 from textblob import TextBlob
 
@@ -14,25 +12,14 @@ def clean_tweet(tweet):
 
 def get_tweet_sentiment(tweet):
     analysis = TextBlob(clean_tweet(tweet))
-    return analysis.sentiment.polarity
+    # use this to get the "total" sentiment
+    # return analysis.sentiment.polarity
+
+    # use this to get the amount of positive tweets
     if analysis.sentiment.polarity > 0:
         return 1
     else:
         return 0
-
-def get_state(coord_string):
-    myshp = open("./shapefiles/us_states.shp", "rb")
-    mydbf = open("./shapefiles/us_states.dbf", "rb")
-    shp_reader = shapefile.Reader(shp=myshp, dbf=mydbf)
-    coords = coord_string.split(",")
-    # shapely requires the coordinates in this order
-    point = Point(float(coords[1]), float(coords[0]))
-
-    for index, shp in enumerate(shp_reader.shapes()):
-        s = shape(shp)
-        if s.contains(point):
-            # print("point is in:", self.shp_reader.record(index)["STUSPS"], self.shp_reader.record(index)["NAME"])
-            return str(shp_reader.record(index)["NAME"])
 
 
 class SparkDriver(object):
@@ -43,6 +30,7 @@ class SparkDriver(object):
         # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
+
         # if we are not inside kubernetes, that means we likely won't have access to the elasticsearch nodes
         # so we change some settings that allow us to communicate with elasticsearch across different networks
         if not kube_mode:
@@ -51,8 +39,16 @@ class SparkDriver(object):
 
         session_builder = pyspark.sql.SparkSession.builder
         session_builder.config(conf = self.spark_conf)
+
         # create the actual spark session
         self.spark_session = session_builder.getOrCreate()
+
+        # add the shapefiles to the spark context so the workers have access to them as well
+        self.spark_session.sparkContext.addFile("./shapefiles/", recursive=True)
+        # add the files with the custom classes so the workers have access to them as well
+        self.spark_session.sparkContext.addPyFile("reverse_geocoder.py")
+        self.spark_session.sparkContext.addPyFile("search_tree.py")
+
         # print some helpful information
         print("Configured Spark and Spark driver")
         print(f"Spark driver is in {'kubernetes' if kube_mode else 'local'} mode")
@@ -101,12 +97,17 @@ class SparkDriver(object):
                                     .reduceByKey(lambda x, y: x + y)
         print("1st mapreduce sample: ", reduced_tweets.take(10))
 
+        # create a search tree and broadcast it to the workers
+        tree = ReverseGeocoder.create_tree()
+        btree = self.spark_session.sparkContext.broadcast(tree)
+        broadcasted_tree = btree.value
+
         # do reverse geocoding to get the 'average' sentiment per state
-        # rg = ReverseGeocoder()
-        state_tweets = reduced_tweets.map(lambda x: (get_state(x[0]), x[1]))\
+        state_tweets = reduced_tweets.map(lambda x: (ReverseGeocoder.get_from_tree_by_string(x[0], broadcasted_tree)["record"], x[1]))\
             .reduceByKey(lambda x, y: x + y).collect()
-        print("2nd mapreduce: ", state_tweets)
-        #return tweet_numbers
+        print(f"2nd mapreduce ({len(state_tweets)} items):", state_tweets)
+
+        return state_tweets
 
 
     def store_processed_tweets(self, processed_tweets):
