@@ -1,0 +1,11 @@
+FROM bitnami/spark:2.4.6
+
+USER root
+
+WORKDIR /opt/bitnami/spark
+
+COPY ./worker-requirements.txt ./requirements.txt
+
+RUN pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt && \
+    pip3 cache purge

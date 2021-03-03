@@ -12,3 +12,4 @@ Dockerfile.base
 *.sh
 *.md
 *.tar
+/src/zipped-packages

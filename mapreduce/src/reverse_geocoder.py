@@ -17,8 +17,11 @@ class ReverseGeocoder(object):
 
     @staticmethod
     def create_tree() -> SearchTree:
-        shp = open(SparkFiles.get("./shapefiles/us_states.shp"), "rb")
-        dbf = open(SparkFiles.get("./shapefiles/us_states.dbf"), "rb")
+        # shp = open(SparkFiles.get("./shapefiles/us_states.shp"), "rb")
+        # dbf = open(SparkFiles.get("./shapefiles/us_states.dbf"), "rb")
+
+        shp = open("./shapefiles/us_states.shp", "rb")
+        dbf = open("./shapefiles/us_states.dbf", "rb")
 
         shp_reader = shapefile.Reader(shp=shp, dbf=dbf)
         state_names = [(x["State_Name"], x["State_Code"]) for x in shp_reader.records()]

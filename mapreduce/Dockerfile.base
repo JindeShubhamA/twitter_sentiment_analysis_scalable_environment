@@ -4,9 +4,24 @@ FROM python:3.6-alpine
 RUN apk add --no-cache bash openjdk8-jre
 
 
+# black magic to install geo stuff for shapely, taken from:
+# https://stackoverflow.com/questions/58700451/alpine-error-during-installing-python-shapely
+RUN echo "http://mirror.leaseweb.com/alpine/edge/community" >> /etc/apk/repositories
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+RUN apk add --virtual .build-deps \
+        --repository http://dl-cdn.alpinelinux.org/alpine/edge/community \
+        --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
+        gcc libc-dev geos-dev geos && \
+    runDeps="$(scanelf --needed --nobanner --recursive /usr/local \
+    | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+    | xargs -r apk info --installed \
+    | sort -u)" && \
+    apk add --virtual .rundeps $runDeps
+
+
 COPY ./src/requirements.txt ./requirements.txt
 
-# purge the pip cache at the end since we don't have a need for it inside an image
+# purge the pip cache at the end since we don't have a need for it inside the image
 RUN pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 cache purge
