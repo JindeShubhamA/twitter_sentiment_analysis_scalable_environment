@@ -1,20 +1,22 @@
 import pyspark
+from pyspark.sql import DataFrame
+
 import settings
 import os
 from reverse_geocoder import ReverseGeocoder
 from tweet_processing import *
 
 
-def clean_tweet(tweet):
+def clean_tweet(tweet: str) -> str:
     return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w+:\ / \ / \S+)", " ", tweet).split())
 
 
-def get_tweet_sentiment(tweet):
+def get_tweet_sentiment(tweet: str) -> float:
     analysis = TextBlob(clean_tweet(tweet))
-    # use this to get the "total" sentiment
+    # use this to get the raw sentiment
     # return analysis.sentiment.polarity
 
-    # use this to get the amount of positive tweets
+    # use this to get whether the tweet is positive or not
     if analysis.sentiment.polarity > 0:
         return 1
     else:
@@ -85,7 +87,7 @@ class SparkDriver(object):
         return retrieved_tweets
 
 
-    def process_tweets(self, tweets):
+    def process_tweets(self, tweets: DataFrame) -> DataFrame:
         tweets.show()
         # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
         # tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
@@ -102,14 +104,14 @@ class SparkDriver(object):
         broadcasted_tree = btree.value
 
         # do reverse geocoding to get the 'average' sentiment per state
-        state_tweets = reduced_tweets.map(lambda x: (ReverseGeocoder.get_from_tree_by_string(x[0], broadcasted_tree)["record"], x[1]))\
+        state_tweets = reduced_tweets.map(lambda x: (ReverseGeocoder.get_from_tree_by_string(x[0], broadcasted_tree).record, x[1]))\
             .reduceByKey(lambda x, y: x + y).collect()
         print(f"2nd mapreduce ({len(state_tweets)} items):", state_tweets)
 
         return state_tweets
 
 
-    def store_processed_tweets(self, processed_tweets):
+    def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
         print("Writing to es cluster...", processed_tweets)
         # write to elasticsearch on the set ip (node), port, and index (resource)
         processed_tweets.write.format("es")\

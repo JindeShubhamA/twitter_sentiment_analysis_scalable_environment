@@ -1,7 +1,10 @@
-from pyspark import SparkFiles, SparkContext
-
+from pyspark import SparkFiles
 import shapefile
+from geocoding_result import GeocodingResult
+from typing import Optional as Opt, Tuple
 from search_tree import SearchTree
+
+Record = Tuple[str, str]
 
 
 class ReverseGeocoder(object):
@@ -13,7 +16,7 @@ class ReverseGeocoder(object):
 
 
     @staticmethod
-    def create_tree():
+    def create_tree() -> SearchTree:
         shp = open(SparkFiles.get("./shapefiles/us_states.shp"), "rb")
         dbf = open(SparkFiles.get("./shapefiles/us_states.dbf"), "rb")
 
@@ -28,7 +31,7 @@ class ReverseGeocoder(object):
     alias for create_tree
     """
     @staticmethod
-    def initialize():
+    def initialize() -> SearchTree:
         return ReverseGeocoder.create_tree()
 
 
@@ -43,17 +46,17 @@ class ReverseGeocoder(object):
     of course, for different coordinates it could be a different result, but I think this shows it doesn't really matter
     """
     @staticmethod
-    def get_from_tree(lat, lon, tree=None):
+    def get_from_tree(lat: float, lon: float, tree: Opt[SearchTree]=None) -> 'GeocodingResult':
         if tree is None:
             if ReverseGeocoder.search_tree is None: raise ReverseGeocoder.UninitializedReverseGeocoderException
             return ReverseGeocoder.search_tree.find_by_coord(lat, lon)
-        else: return tree.find_by_coord(float(lat), float(lon))
+        else: return tree.find_by_coord(lat, lon)
 
 
     @staticmethod
-    def get_from_tree_by_string(string, tree=None):
+    def get_from_tree_by_string(string: str, tree: Opt[SearchTree]=None) -> 'GeocodingResult':
         coords = string.split(",")
-        return ReverseGeocoder.get_from_tree(coords[0], coords[1], tree)
+        return ReverseGeocoder.get_from_tree(float(coords[0]), float(coords[1]), tree)
 
                
 
