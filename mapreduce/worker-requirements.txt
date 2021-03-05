@@ -1,5 +1,5 @@
-# using version 2.4.6 because 3.x apparently doesn't work with elasticsearch
-# pyspark==2.4.6
+# these are only the requirements that are strictly needed by the workers to complete their work
+# requirements for the driver should go to src/requirements.txt
 shapely
 pyshp
 textblob

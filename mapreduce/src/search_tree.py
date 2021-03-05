@@ -4,7 +4,7 @@ from typing import Optional as Opt, Tuple, Sequence
 from shapefile import Shapes
 from shapely.geometry import shape, Point
 
-from reverse_geocoder import GeocodingResult
+from geocoding_result import GeocodingResult
 
 Record = Tuple[str, str]
 

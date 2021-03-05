@@ -1,4 +1,3 @@
-from pyspark import SparkFiles
 import shapefile
 from geocoding_result import GeocodingResult
 from typing import Optional as Opt, Tuple
@@ -9,6 +8,8 @@ Record = Tuple[str, str]
 
 class ReverseGeocoder(object):
     search_tree = None
+    state_name = "State_Name"
+    state_code = "State_Code"
 
     # very catchy name, 10/10 would raise exception again
     class UninitializedReverseGeocoderException(Exception):
@@ -17,14 +18,14 @@ class ReverseGeocoder(object):
 
     @staticmethod
     def create_tree() -> SearchTree:
-        # shp = open(SparkFiles.get("./shapefiles/us_states.shp"), "rb")
-        # dbf = open(SparkFiles.get("./shapefiles/us_states.dbf"), "rb")
-
         shp = open("./shapefiles/us_states.shp", "rb")
         dbf = open("./shapefiles/us_states.dbf", "rb")
 
         shp_reader = shapefile.Reader(shp=shp, dbf=dbf)
-        state_names = [(x["State_Name"], x["State_Code"]) for x in shp_reader.records()]
+        state_names = [
+            (x[ReverseGeocoder.state_name], x[ReverseGeocoder.state_code])
+            for x in shp_reader.records()
+        ]
 
         ReverseGeocoder.search_tree = SearchTree(shp_reader.shapes(), state_names)
         return ReverseGeocoder.search_tree
@@ -65,6 +66,5 @@ class ReverseGeocoder(object):
 
 if __name__ == "__main__":
     s_tree = ReverseGeocoder.create_tree()
-    print(ReverseGeocoder.get_from_tree_by_string("37.241979000000015,-115.81718400000003", s_tree))
-    # print(rg.search_tree.tree.left_child, rg.search_tree.tree.right_child)
+    print(ReverseGeocoder.get_from_tree_by_string("37.241979000000015,-115.81718400000003", s_tree).record)
 
