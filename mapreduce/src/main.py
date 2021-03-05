@@ -6,24 +6,6 @@ import os
 from reverse_geocoder import ReverseGeocoder
 from tweet_processing import *
 
-import shutil
-
-
-def clean_tweet(tweet: str) -> str:
-    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w+:\ / \ / \S+)", " ", tweet).split())
-
-
-def get_tweet_sentiment(tweet: str) -> float:
-    analysis = TextBlob(clean_tweet(tweet))
-    # use this to get the raw sentiment
-    # return analysis.sentiment.polarity
-
-    # use this to get whether the tweet is positive or not
-    if analysis.sentiment.polarity > 0:
-        return 1
-    else:
-        return 0
-
 
 class SparkDriver(object):
 
@@ -46,30 +28,10 @@ class SparkDriver(object):
         # create the actual spark session
         self.spark_session = session_builder.getOrCreate()
 
-        # add the shapefiles to the spark context so the workers have access to them as well
-        # self.spark_session.sparkContext.addFile(os.path.abspath("./shapefiles/"), recursive=True)
         # add the files with the custom classes so the workers have access to them as well
         self.spark_session.sparkContext.addPyFile("reverse_geocoder.py")
         self.spark_session.sparkContext.addPyFile("geocoding_result.py")
         self.spark_session.sparkContext.addPyFile("search_tree.py")
-
-        # package_location = "/usr/local/lib/python3.6/site-packages" if kube_mode else "../venv/Lib/site-packages"
-        # zip_location = "./zipped-packages"
-        # # add any package names that need to be present on the worker nodes to this list
-        # # keep in mind that any other packages these packages depend on need to added as well!
-        # # (use "pip show package_name" to see which packages a package requires)
-        # worker_packages = ["nltk", "click", "joblib", "regex", "tqdm", "textblob"]
-        # # zip the packages from worker_packages, and add them to the spark_context so the workers can use them
-        # for package in worker_packages:
-        #     zipped_package_location = os.path.abspath(
-        #         shutil.make_archive(
-        #             os.path.join(zip_location, package),
-        #             "zip",
-        #             root_dir=package_location,
-        #             base_dir=package
-        #         )
-        #     )
-        #     self.spark_session.sparkContext.addPyFile(zipped_package_location)
 
         # print some helpful information
         print("Configured Spark and Spark driver")
@@ -110,8 +72,6 @@ class SparkDriver(object):
 
     def process_tweets(self, tweets: DataFrame) -> DataFrame:
         tweets.show()
-        # do some processing on the tweets, for now we just create a dataframe with the numbers from 0 to the amount of tweets we got
-        # tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
 
         # do sentiment analysis
         # reduces each tweet to a tuple (location, nr_positive_tweets)
