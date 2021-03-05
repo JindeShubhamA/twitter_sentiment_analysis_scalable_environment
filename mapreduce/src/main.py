@@ -1,28 +1,11 @@
 import pyspark
 from pyspark.sql import DataFrame
 
+
 import settings
 import os
 from reverse_geocoder import ReverseGeocoder
 from tweet_processing import *
-
-import shutil
-
-
-def clean_tweet(tweet: str) -> str:
-    return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w+:\ / \ / \S+)", " ", tweet).split())
-
-
-def get_tweet_sentiment(tweet: str) -> float:
-    analysis = TextBlob(clean_tweet(tweet))
-    # use this to get the raw sentiment
-    # return analysis.sentiment.polarity
-
-    # use this to get whether the tweet is positive or not
-    if analysis.sentiment.polarity > 0:
-        return 1
-    else:
-        return 0
 
 
 class SparkDriver(object):
@@ -114,10 +97,13 @@ class SparkDriver(object):
         # tweet_numbers = self.spark_session.createDataFrame([{"tweet_num": i, "id": i} for i in range(tweets.count())])
 
         # do sentiment analysis
-        # reduces each tweet to a tuple (location, nr_positive_tweets)
-        reduced_tweets = tweets.rdd.map(lambda x: (x.location, get_tweet_sentiment(x.tweet)))\
-                                    .reduceByKey(lambda x, y: x + y)
-        print("1st mapreduce: ", reduced_tweets.take(10))
+        # reduces data frame to 2 cols: location | sentiment_score_sum
+        reduced_tweets = tweets.withColumn("tweet_sentiment", get_sentiment_udf("tweet"))\
+            .groupBy("location")\
+            .agg(F.sum("tweet_sentiment").alias("tweet_sentiment"))
+
+        print("1st mapreduce: ")
+        reduced_tweets.show()
 
         # create a search tree and broadcast it to the workers
         tree = ReverseGeocoder.create_tree()
@@ -125,9 +111,15 @@ class SparkDriver(object):
         broadcasted_tree = btree.value
 
         # do reverse geocoding to get the 'average' sentiment per state
-        state_tweets = reduced_tweets.map(lambda x: (ReverseGeocoder.get_from_tree_by_string(x[0], broadcasted_tree).record, x[1]))\
-            .reduceByKey(lambda x, y: x + y).collect()
-        print(f"2nd mapreduce ({len(state_tweets)} items):", state_tweets)
+        get_state_udf = F.udf(
+            lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record
+        )
+        state_tweets = reduced_tweets.withColumn("state", get_state_udf("location"))\
+            .groupBy("state")\
+            .agg(F.sum("tweet_sentiment").alias("state_sentiment"))
+
+        print("2nd mapreduce: ")
+        state_tweets.show()
 
         return state_tweets
 
