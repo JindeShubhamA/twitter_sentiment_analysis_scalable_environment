@@ -1,5 +1,7 @@
 import re
 from textblob import TextBlob
+from pyspark.sql import functions as F
+from reverse_geocoder import ReverseGeocoder
 
 
 def clean_tweet(tweet):
@@ -9,3 +11,13 @@ def clean_tweet(tweet):
 def get_tweet_sentiment(tweet):
     analysis = TextBlob(clean_tweet(tweet))
     return analysis.sentiment.polarity
+
+
+# UDFs needed for DataFrame map/reduce
+get_sentiment_udf = F.udf(
+    lambda x: float(get_tweet_sentiment(x))
+)
+
+# get_state_udf = F.udf(
+#     lambda x: ReverseGeocoder.get_from_tree_by_string(x, broadcasted_tree)
+# )

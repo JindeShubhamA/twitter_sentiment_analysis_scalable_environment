@@ -1,9 +1,10 @@
-from typing import Optional as Opt, Tuple
+from typing import Optional as Opt, Tuple, Sequence
 
 from shapely.geometry import Polygon
 
-Record = Tuple[str, str]
+Record = Sequence[str]
 BoundingBox = Tuple[float, float, float, float]
+
 
 class GeocodingResult(object):
     def __init__(self,

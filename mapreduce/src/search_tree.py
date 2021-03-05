@@ -33,7 +33,7 @@ class SearchTree(object):
         self.max_leaf_size = max_leaf_size
 
         items = [
-            GeocodingResult(shape(x), shape(x).bounds, records[index])
+            GeocodingResult(shape(x), shape(x).bounds, list(records[index]))
             # {"shape": shape(x), "bounds": shape(x).bounds, "record": records[index]}
             for index, x in enumerate(shapes)
         ]
