@@ -1,35 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="1fb48000-9bb7-4644-9711-05d07350a40c" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-deployment.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-deployment.yaml" />
-      <change beforePath="$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-service.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-service.yaml" />
-      <change beforePath="$PROJECT_DIR$/mapreduce/spark-kube/spark-worker-deployment.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-worker-deployment.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/client-deployment.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/client-deployment.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/consumer-pod.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/elasticsearch-service.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/elasticsearch-service.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/elasticsearch-statefulset.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/elasticsearch-statefulset.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/elasticsearch_GCP/es.yml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/elasticsearch_GCP/storage_class.yml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/elasticsearch_pvc.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/elasticsearch_pvc.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka-claim0-persistentvolumeclaim.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka-deployment.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka-service.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka/kafka.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/kafka/kafka.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka/zookeeper.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/kafka/zookeeper.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_1/kafka-claim0-persistentvolumeclaim.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_1/kafka-deployment.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_1/kafka-service.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_1/zookeeper-deployment.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/zookeeper-deployment.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_1/zookeeper-service.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/zookeeper-service.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_operator_GCP/kafka-persistent-single.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/kafka_operator_GCP/strimzi-cluster-operator-0.17.0.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/msgqueue-networkpolicy.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/streaming-networkpolicy.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/populate_db.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/populate_db.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/producer-pod.yaml" afterPath="$PROJECT_DIR$/streaming/kubernetes/producer-pod.yaml" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/zookeeper-deployment.yaml" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/msgqueue/kubernetes/zookeeper-service.yaml" afterPath="" />
-    </list>
+    <list default="true" id="1fb48000-9bb7-4644-9711-05d07350a40c" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -53,7 +25,7 @@
         <entry file="file://$PROJECT_DIR$/streaming/docker-compose.yml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="361">
-              <caret line="81" column="47" lean-forward="true" selection-start-line="81" selection-start-column="11" selection-end-line="81" selection-end-column="47" />
+              <caret line="81" column="47" lean-forward="false" selection-start-line="81" selection-start-column="11" selection-end-line="81" selection-end-column="47" />
               <folding />
             </state>
           </provider>
@@ -183,7 +155,7 @@
             <path>
               <item name="2021_group_06_s3993914_s3479692_s3409023" type="b2602c69:ProjectViewProjectNode" />
               <item name="2021_group_06_s3993914_s3479692_s3409023" type="462c0819:PsiDirectoryNode" />
-              <item name="mapreduce" type="462c0819:PsiDirectoryNode" />
+              <item name="streaming" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -241,8 +213,8 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29504234" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24453841" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29504234" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24453841" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Project Explorer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Job Explorer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -279,7 +251,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#43#0" expanded="true" />
+            <element signature="e#0#43#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -289,7 +261,7 @@
         <state relative-caret-position="-29">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#84#0" expanded="true" />
+            <element signature="e#0#84#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -441,7 +413,7 @@
     <entry file="file://$PROJECT_DIR$/streaming/docker-compose.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="361">
-          <caret line="81" column="47" lean-forward="true" selection-start-line="81" selection-start-column="11" selection-end-line="81" selection-end-column="47" />
+          <caret line="81" column="47" lean-forward="false" selection-start-line="81" selection-start-column="11" selection-end-line="81" selection-end-column="47" />
           <folding />
         </state>
       </provider>
