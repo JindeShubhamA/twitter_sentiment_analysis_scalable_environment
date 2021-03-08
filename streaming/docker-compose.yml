@@ -71,7 +71,7 @@ services:
     networks:
       - stream-network
     volumes:
-      - ./scripts:/scripts/
+      - ./:/scripts/
     ports:
       - 8082:8080
       - 7077:7077
