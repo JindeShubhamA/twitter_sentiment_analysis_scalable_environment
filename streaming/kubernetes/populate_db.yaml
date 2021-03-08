@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: populating-db
+  namespace: default
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+      - name: populating-db
+        image: docker.io/sjinde/scalable_populate_db:0.1.0
+      restartPolicy: OnFailure
