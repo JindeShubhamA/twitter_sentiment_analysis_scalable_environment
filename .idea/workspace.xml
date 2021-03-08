@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="1fb48000-9bb7-4644-9711-05d07350a40c" name="Default" comment="" />
+    <list default="true" id="1fb48000-9bb7-4644-9711-05d07350a40c" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/streaming/README.md" afterPath="$PROJECT_DIR$/streaming/README.md" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -52,7 +54,7 @@
         </entry>
       </file>
       <file leaf-file-name="spark-leader-deployment.yaml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-deployment.yaml">
+        <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-deployment.yaml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="341">
               <caret line="37" column="53" lean-forward="false" selection-start-line="37" selection-start-column="53" selection-end-line="37" selection-end-column="53" />
@@ -62,7 +64,7 @@
         </entry>
       </file>
       <file leaf-file-name="spark-leader-service.yaml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-service.yaml">
+        <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-service.yaml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="247">
               <caret line="19" column="36" lean-forward="false" selection-start-line="19" selection-start-column="36" selection-end-line="19" selection-end-column="36" />
@@ -71,11 +73,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="spark-worker-deployment.yaml" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-worker-deployment.yaml">
+      <file leaf-file-name="spark-worker-deployment.yaml" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-worker-deployment.yaml">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="393">
               <caret line="43" column="53" lean-forward="false" selection-start-line="43" selection-start-column="53" selection-end-line="43" selection-end-column="53" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/streaming/README.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="130">
+              <caret line="10" column="45" lean-forward="false" selection-start-line="10" selection-start-column="45" selection-end-line="10" selection-end-column="45" />
               <folding />
             </state>
           </provider>
@@ -123,6 +135,7 @@
         <option value="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-service.yaml" />
         <option value="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-deployment.yaml" />
         <option value="$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-worker-deployment.yaml" />
+        <option value="$PROJECT_DIR$/streaming/README.md" />
       </list>
     </option>
   </component>
@@ -170,6 +183,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mapreduce" />
       <recent name="$PROJECT_DIR$/streaming/kubernetes" />
       <recent name="$PROJECT_DIR$/streaming" />
       <recent name="$PROJECT_DIR$/streaming/scripts" />
@@ -205,6 +219,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="DB Browser" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -213,7 +228,7 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29504234" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.29504234" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24453841" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Project Explorer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Job Explorer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -238,14 +253,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/streaming/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-425">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/streaming/consumer/spark_base.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -394,7 +401,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-service.yaml">
+    <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-service.yaml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="247">
           <caret line="19" column="36" lean-forward="false" selection-start-line="19" selection-start-column="36" selection-end-line="19" selection-end-column="36" />
@@ -402,7 +409,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-leader-deployment.yaml">
+    <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-leader-deployment.yaml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="341">
           <caret line="37" column="53" lean-forward="false" selection-start-line="37" selection-start-column="53" selection-end-line="37" selection-end-column="53" />
@@ -418,10 +425,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/streaming/kubernetes/spark-kube/spark-worker-deployment.yaml">
+    <entry file="file://$PROJECT_DIR$/mapreduce/spark-kube/spark-worker-deployment.yaml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="393">
           <caret line="43" column="53" lean-forward="false" selection-start-line="43" selection-start-column="53" selection-end-line="43" selection-end-column="53" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/streaming/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="130">
+          <caret line="10" column="45" lean-forward="false" selection-start-line="10" selection-start-column="45" selection-end-line="10" selection-end-column="45" />
           <folding />
         </state>
       </provider>
