@@ -80,8 +80,15 @@ class SparkDriver(object):
             .groupBy("location")\
             .agg(F.sum("tweet_sentiment").alias("tweet_sentiment"))
 
+        # count = reduced_tweets.count()
+
         print("1st mapreduce: ")
+        # print(f"{count} rows")
+        # print(reduced_tweets.explain(True))
         reduced_tweets.show()
+
+        # repartitioned = reduced_tweets.coalesce(1)
+        # repartitioned.show()
 
         # create a search tree and broadcast it to the workers
         tree = ReverseGeocoder.create_tree()
@@ -96,8 +103,14 @@ class SparkDriver(object):
             .groupBy("state")\
             .agg(F.sum("tweet_sentiment").alias("state_sentiment"))
 
+        # count_2 = state_tweets.count()
+
         print("2nd mapreduce: ")
+        # print(state_tweets.explain(True))
         state_tweets.show()
+
+        # repartitioned_2 = state_tweets.coalesce(1)
+        # repartitioned_2.show()
 
         return state_tweets
 

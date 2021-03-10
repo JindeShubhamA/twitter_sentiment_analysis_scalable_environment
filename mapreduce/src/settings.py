@@ -21,6 +21,8 @@ spark_settings = [
     ("spark.driver.blockManager.port", "30002"),
     # add this jar to communicate with elasticsearch
     ("spark.jars", "./spark-jars/elasticsearch-hadoop-7.11.1.jar"),
+    # set this to 2 to match the amount of workers
+    ("spark.sql.shuffle.partitions", "2"),
 ]
 
 # settings related to connecting to elasticsearch

@@ -41,7 +41,7 @@ spec:
               value: "1"
             - name: SPARK_WORKER_MEMORY
               value: 1G
-          image: bde2020/spark-worker:2.2.2-hadoop2.7
+          image: docker.io/richardswesterhof/spark:latest
           name: spark-worker
           resources: {}
       restartPolicy: Always
