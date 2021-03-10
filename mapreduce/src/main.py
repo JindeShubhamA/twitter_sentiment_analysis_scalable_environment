@@ -33,6 +33,7 @@ class SparkDriver(object):
         self.spark_session.sparkContext.addPyFile("reverse_geocoder.py")
         self.spark_session.sparkContext.addPyFile("geocoding_result.py")
         self.spark_session.sparkContext.addPyFile("search_tree.py")
+        self.spark_session.sparkContext.addPyFile("tweet_processing.py")
 
         # print some helpful information
         print("Configured Spark and Spark driver")
