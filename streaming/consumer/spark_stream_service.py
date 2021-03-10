@@ -10,7 +10,7 @@ def connect_to_kafka_stream(topic_name, spark_session):
     return (spark_session
             .readStream
             .format("kafka")
-            .option("kafka.bootstrap.servers", "http://kafka:29092")
+            .option("kafka.bootstrap.servers", "http://kafka:9093")
             .option("subscribe", topic_name)
             .load())
 

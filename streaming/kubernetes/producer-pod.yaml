@@ -22,4 +22,4 @@ spec:
     spec:
       containers:
       - name: producer
-        image: docker.io/sjinde/scalable_producer:0.1.0
+        image: sjinde/scalable:producer

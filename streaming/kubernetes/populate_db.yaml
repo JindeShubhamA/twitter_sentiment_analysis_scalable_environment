@@ -11,5 +11,5 @@ spec:
     spec:
       containers:
       - name: populating-db
-        image: docker.io/sjinde/scalable_populate_db:0.1.0
+        image: sjinde/scalable:populate_db
       restartPolicy: OnFailure

@@ -6,8 +6,8 @@ metadata:
     kompose.version: 1.22.0 (955b78124)
   creationTimestamp: null
   labels:
-    io.kompose.service: spark-master
-  name: spark-master
+    io.kompose.service: spark-leader
+  name: spark-leader
 spec:
   ports:
     - name: "8080"
@@ -17,6 +17,6 @@ spec:
       port: 7077
       targetPort: 7077
   selector:
-    io.kompose.service: spark-master
+    io.kompose.service: spark-leader
 status:
   loadBalancer: {}

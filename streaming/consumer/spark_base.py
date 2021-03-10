@@ -6,7 +6,7 @@ class Source:
     def __init__(self):
         self.conf = SparkConf() \
             .setAppName("Spark Stream Service") \
-            .setMaster("spark://spark-master:7077")
+            .setMaster("spark://spark-leader:7077")
 
         self.sc = SparkContext(conf=self.conf)
 
