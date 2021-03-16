@@ -45,9 +45,9 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
 
-  spark-master:
+  spark-leader:
     image: bde2020/spark-master:2.2.2-hadoop2.7
-    container_name: spark-master
+    container_name: spark-leader
     networks:
       - stream-network
     volumes:
@@ -64,11 +64,11 @@ services:
     networks:
       - stream-network
     depends_on:
-      - spark-master
+      - spark-leader
     ports:
       - 8083:8081
     environment:
-      - "SPARK_MASTER=spark://spark-master:7077"
+      - "SPARK_MASTER=spark://spark-leader:7077"
 
   populate_db:
     build:

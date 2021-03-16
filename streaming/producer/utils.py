@@ -35,6 +35,6 @@ def set_logger(file_path_extension):
 
 def acked(err, msg):
     if err is not None:
-        print(f"Failed to deliver message: {msg}: {err}")
+        print("Failed to deliver message: {msg}: {err}")
     else:
-        print(f"Message produced for Kafka message object...")
+        print("Message produced for Kafka message object...")
