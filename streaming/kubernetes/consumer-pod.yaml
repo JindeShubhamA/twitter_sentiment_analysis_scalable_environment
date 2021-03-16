@@ -19,7 +19,7 @@ spec:
         io.kompose.service: consumer
     spec:
       containers:
-        - image: sjinde/scalable:consumer
+        - image: docker.io/sjinde/scalable_consumer:0.1.0
           name: consumer
           resources: {}
       hostname: consumer
