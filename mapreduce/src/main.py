@@ -1,5 +1,6 @@
 import pyspark
 from pyspark.sql import DataFrame
+from pyspark.sql.functions import split
 
 
 import settings
@@ -52,8 +53,8 @@ class SparkDriver(object):
             }
           }
         }"""
+
         # q = """{
-        #   "from" : 0, "size" : 10000,
         #   "query": {
         #     "match_all": {}
         #   }
@@ -75,20 +76,55 @@ class SparkDriver(object):
     def process_tweets(self, tweets: DataFrame) -> DataFrame:
         tweets.show()
 
-        # do sentiment analysis
-        # reduces data frame to 2 cols: location | sentiment_score_sum
-        reduced_tweets = tweets.withColumn("tweet_sentiment", get_sentiment_udf("tweet"))\
+        # to each row (aka tweet), add a column that contains the sentiment of that tweet
+        with_sentiment = tweets\
+            .withColumn("tweet_sentiment", get_sentiment_udf("tweet"))
+            # .withColumn("deviation", F.abs(F.col("tweet_sentiment") - F.col("mean")))
+
+        with_sentiment.show()
+
+        # group the new dataframe rows by location (at this point still in coordinates!)
+        location_reduced = with_sentiment\
             .groupBy("location")\
-            .agg(F.sum("tweet_sentiment").alias("tweet_sentiment"))
+            .agg(F.count("location").alias("weight"),
+                 F.sum("tweet_sentiment").alias("total_sentiment"))\
+            .withColumn("average_location_sentiment", F.col("total_sentiment") / F.col("weight"))
 
-        # count = reduced_tweets.count()
+        # do grouping by time
+        # first split a timestamp of the format (yyyy-mm-dd HH:mm:ss) into the date (yyyy-mm-dd) and time (HH:mm:ss)
+        split_timestamp = split(with_sentiment["timestamp"], " ")
+        # create a new intermediate dataframe with those columns added
+        with_st = with_sentiment.withColumn("timestamp_date", split_timestamp.getItem(0))\
+                                .withColumn("timestamp_time", split_timestamp.getItem(1))
+        # split those new columns into year, month, day, hour columns
+        # (minutes and seconds seem kinda useless but are trivial to add as well)
+        split_date = split(with_st["timestamp_date"], "-")
+        split_time = split(with_st["timestamp_time"], ":")
+        # add the columns to new dataframe
+        with_date_and_time = with_st.withColumn("timestamp_year", split_date.getItem(0))\
+                                    .withColumn("timestamp_month", split_date.getItem(1))\
+                                    .withColumn("timestamp_day", split_date.getItem(2))\
+                                    .withColumn("timestamp_hour", split_time.getItem(0))
+        # reduce by hour, and order them by ascending hour
+        hour_reduced = with_date_and_time\
+            .groupBy("timestamp_hour")\
+            .agg(F.count("location").alias("weight"),
+                 F.sum("tweet_sentiment").alias("total_sentiment"))\
+            .withColumn("average_sentiment", F.col("total_sentiment") / F.col("weight"))\
+            .orderBy("timestamp_hour")
+        # count = location_reduced.count()
 
-        print("1st mapreduce: ")
+        # print("1st mapreduce: ")
         # print(f"{count} rows")
-        # print(reduced_tweets.explain(True))
-        reduced_tweets.show()
+        # print(location_reduced.explain(True))
+        print("reduced by location:")
+        location_reduced.show()
+        print()
+        print("reduced by hour:")
+        hour_reduced.show(24)
+        print()
 
-        # repartitioned = reduced_tweets.coalesce(1)
+        # repartitioned = location_reduced.coalesce(1)
         # repartitioned.show()
 
         # create a search tree and broadcast it to the workers
@@ -100,15 +136,18 @@ class SparkDriver(object):
         get_state_udf = F.udf(
             lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record
         )
-        state_tweets = reduced_tweets.withColumn("state", get_state_udf("location"))\
+        state_tweets = location_reduced.withColumn("state", get_state_udf("location"))\
             .groupBy("state")\
-            .agg(F.sum("tweet_sentiment").alias("state_sentiment"))
+            .agg(F.sum("weight").alias("weight"),
+                 F.sum("total_sentiment").alias("state_sentiment"))\
+            .withColumn("average_state_sentiment", F.col("state_sentiment") / F.col("weight"))
 
         # count_2 = state_tweets.count()
 
-        print("2nd mapreduce: ")
+        # print("2nd mapreduce: ")
         # print(state_tweets.explain(True))
-        state_tweets.show()
+        print("reduced by state:")
+        state_tweets.show(51)
 
         # repartitioned_2 = state_tweets.coalesce(1)
         # repartitioned_2.show()

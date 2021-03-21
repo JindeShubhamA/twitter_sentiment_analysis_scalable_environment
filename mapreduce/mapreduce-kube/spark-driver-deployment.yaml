@@ -27,9 +27,9 @@ spec:
         - image: docker.io/richardswesterhof/mapreduce:latest
           name: spark-driver
           ports:
-            - containerPort: 4040
             - containerPort: 30001
             - containerPort: 30002
+            - containerPort: 4040
           resources: {}
           env: 
             - name: RUNNING_AS_KUBE_DEPLOYMENT
