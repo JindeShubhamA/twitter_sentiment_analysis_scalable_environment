@@ -79,22 +79,29 @@ class SparkDriver(object):
         # to each row (aka tweet), add a column that contains the sentiment of that tweet
         with_sentiment = tweets\
             .withColumn("tweet_sentiment", get_sentiment_udf("tweet"))
-            # .withColumn("deviation", F.abs(F.col("tweet_sentiment") - F.col("mean")))
 
-        with_sentiment.show()
+        mean_sentiment = with_sentiment.groupBy().agg(F.mean("tweet_sentiment").alias("mean")).take(1)[0]["mean"]
+
+        with_deviation = with_sentiment\
+            .withColumn("mean_sentiment", F.lit(mean_sentiment))\
+            .withColumn("deviation", F.abs(F.col("tweet_sentiment") - F.col("mean_sentiment")))
+
+        with_deviation.show()
 
         # group the new dataframe rows by location (at this point still in coordinates!)
-        location_reduced = with_sentiment\
+        location_reduced = with_deviation\
             .groupBy("location")\
             .agg(F.count("location").alias("weight"),
-                 F.sum("tweet_sentiment").alias("total_sentiment"))\
-            .withColumn("average_location_sentiment", F.col("total_sentiment") / F.col("weight"))
+                 F.sum("tweet_sentiment").alias("total_sentiment"),
+                 F.sum("deviation").alias("total_deviation"))\
+            .withColumn("average_sentiment", F.col("total_sentiment") / F.col("weight"))\
+            .withColumn("average_deviation", F.col("total_deviation") / F.col("weight"))
 
         # do grouping by time
         # first split a timestamp of the format (yyyy-mm-dd HH:mm:ss) into the date (yyyy-mm-dd) and time (HH:mm:ss)
-        split_timestamp = split(with_sentiment["timestamp"], " ")
+        split_timestamp = split(with_deviation["timestamp"], " ")
         # create a new intermediate dataframe with those columns added
-        with_st = with_sentiment.withColumn("timestamp_date", split_timestamp.getItem(0))\
+        with_st = with_deviation.withColumn("timestamp_date", split_timestamp.getItem(0))\
                                 .withColumn("timestamp_time", split_timestamp.getItem(1))
         # split those new columns into year, month, day, hour columns
         # (minutes and seconds seem kinda useless but are trivial to add as well)
@@ -109,8 +116,10 @@ class SparkDriver(object):
         hour_reduced = with_date_and_time\
             .groupBy("timestamp_hour")\
             .agg(F.count("location").alias("weight"),
-                 F.sum("tweet_sentiment").alias("total_sentiment"))\
-            .withColumn("average_sentiment", F.col("total_sentiment") / F.col("weight"))\
+                 F.sum("tweet_sentiment").alias("total_sentiment"),
+                 F.sum("deviation").alias("total_deviation"))\
+            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight"))\
+            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight"))\
             .orderBy("timestamp_hour")
         # count = location_reduced.count()
 
@@ -139,8 +148,10 @@ class SparkDriver(object):
         state_tweets = location_reduced.withColumn("state", get_state_udf("location"))\
             .groupBy("state")\
             .agg(F.sum("weight").alias("weight"),
-                 F.sum("total_sentiment").alias("state_sentiment"))\
-            .withColumn("average_state_sentiment", F.col("state_sentiment") / F.col("weight"))
+                 F.sum("total_sentiment").alias("state_sentiment"),
+                 F.sum("total_deviation").alias("state_deviation"))\
+            .withColumn("mean_sentiment", F.col("state_sentiment") / F.col("weight"))\
+            .withColumn("standard_deviation", F.col("state_deviation") / F.col("weight"))
 
         # count_2 = state_tweets.count()
 
