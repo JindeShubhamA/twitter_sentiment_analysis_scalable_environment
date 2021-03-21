@@ -25,9 +25,6 @@ services:
         timeout: 10s
         retries: 5
   kafka:
-    # Exposes 9092 for external connections to the broker
-    # Use kafka:29092 for connections internal on the docker network
-    # See https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     image: confluentinc/cp-kafka
     container_name: kafka
     depends_on:
@@ -37,37 +34,21 @@ services:
     ports:
       - 9092:9092
       - 30001:30001
+      - 9093:9093
     environment:
       KAFKA_CREATE_TOPICS: stream
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093,PLAINTEXT_HOST://localhost:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      KAFKA_JMX_PORT: 30001
-      KAFKA_JMX_HOSTNAME: kafka
 
-  kafka-jmx-exporter:
-    build: ./tools/prometheus-jmx-exporter
-    container_name: jmx-exporter
-    ports:
-      - 8080:8080
-    links:
-      - kafka
-    networks:
-      - stream-network
-    environment:
-      JMX_PORT: 30001
-      JMX_HOST: kafka
-      HTTP_PORT: 8080
-      JMX_EXPORTER_CONFIG_FILE: kafka.yml
-
-  spark-master:
+  spark-leader:
     image: bde2020/spark-master:2.2.2-hadoop2.7
-    container_name: spark-master
+    container_name: spark-leader
     networks:
       - stream-network
     volumes:
@@ -84,11 +65,11 @@ services:
     networks:
       - stream-network
     depends_on:
-      - spark-master
+      - spark-leader
     ports:
       - 8083:8081
     environment:
-      - "SPARK_MASTER=spark://spark-master:7077"
+      - "SPARK_MASTER=spark://spark-leader:7077"
 
   populate_db:
     build:

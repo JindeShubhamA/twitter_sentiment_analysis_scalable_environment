@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: ./tools/kompose -f spark-compose.yml convert -o spark-kube
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: spark-leader
+  name: spark-leader
+spec:
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080
+    - name: "7077"
+      port: 7077
+      targetPort: 7077
+  selector:
+    io.kompose.service: spark-leader
+status:
+  loadBalancer: {}

@@ -4,11 +4,11 @@ A Python project for analysing real-time tweets data
 
 To build the project
 
-`docker-compose build .`
+`docker-compose build`
 
 To run the project:
 
-`docker-compose up -d zookeeper elasticsearch kafka kafka-jmx-exporter spark-master spark-worker-1`
+`docker-compose up -d zookeeper elasticsearch kafka spark-leader spark-worker-1`
 
 After this run client to see elasticsearch is up or not
 
@@ -20,7 +20,7 @@ Populate the elasticsearch
 
 Run the spark streaming consumer
 
-`docker exec spark-master bash scripts/start_consumer.sh`
+`docker exec spark-leader bash scripts/start_consumer.sh`
 
 Run the producer in a seperate tab
 

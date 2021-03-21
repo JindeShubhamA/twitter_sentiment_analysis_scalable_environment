@@ -34,8 +34,8 @@ def produce_list_of_coin_dict_into_kafka(list_of_dict):
             producer.poll(1)
         except Exception as e:
             LOGGER.info(
-                f"There is a problem with kafka producer\n"
-                f"The problem is: {e}!")
+                "There is a problem with kafka producer\n"
+                "The problem is: {e}!")
 
 
 if __name__ == "__main__":
@@ -43,6 +43,6 @@ if __name__ == "__main__":
     while True:
         es_response = list(es.scanAll())
         produce_list_of_coin_dict_into_kafka(es_response)
-        LOGGER.info(f"Produced into Kafka topic: {STREAM_TOPIC}.")
-        LOGGER.info(f"Waiting for the next round...")
+        LOGGER.info("Produced into Kafka topic: {STREAM_TOPIC}.")
+        LOGGER.info("Waiting for the next round...")
         time.sleep(10)
