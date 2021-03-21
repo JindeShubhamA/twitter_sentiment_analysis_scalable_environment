@@ -1,33 +1,42 @@
 import os
 
 # the environment variable that will be set to "true" in the kubernetes containers
-kube_mode_check = "RUNNING_AS_KUBE_DEPLOYMENT"
+KUBE_MODE_VAR = "RUNNING_AS_KUBE_DEPLOYMENT"
+IN_KUBE_MODE = os.environ.get(KUBE_MODE_VAR) == "true"
+
+# this actually affects the amount of workers we want in local mode
+NUM_LOCAL_WORKERS = 4
+# whereas this is only to get the correct amount of partitions in kube mode
+# and should therefore be set equal to the amount of replicas the worker pod has
+NUM_CLUSTER_WORKERS = 2
+# controls the amount of partitions there should be PER WORKER
+PARTITIONS_PER_WORKER = 4
+
 
 # general spark settings
 spark_settings = [
-    ("spark.master", "spark://spark-leader:7077" if os.environ.get(kube_mode_check) == "true" else "local[4]"),
+    ("spark.master", "spark://spark-leader:7077" if IN_KUBE_MODE else f"local[{NUM_LOCAL_WORKERS}]"),
     ("spark.app.name", "Historical Tweet Processor"),
     # client mode should be better if the driver and the workers are on the same network
-    # (since they are on the same docker network, this seems appropriate)
+    # (since they are on the same kubernetes cluster, this seems appropriate)
     ("spark.submit.deployMode", "client"),
     ("spark.ui.showConsoleProgress", "true"),
     ("spark.eventLog.enabled", "false"),
     ("spark.logConf", "false"),
     # these are important for spark to communicate back to us
     ("spark.driver.bindAddress", "0.0.0.0"),
-    ("spark.driver.host", "spark-driver" if os.environ.get(kube_mode_check) == "true" else "localhost"),
+    ("spark.driver.host", "spark-driver" if IN_KUBE_MODE else "localhost"),
     ("spark.kubernetes.driver.pod.name", "spark-driver"),
     ("spark.driver.port", "30001"),
     ("spark.driver.blockManager.port", "30002"),
     # add this jar to communicate with elasticsearch
     ("spark.jars", "./spark-jars/elasticsearch-hadoop-7.11.1.jar"),
-    # set this to 2 to match the amount of workers
-    ("spark.sql.shuffle.partitions", "2"),
+    ("spark.sql.shuffle.partitions", f"{PARTITIONS_PER_WORKER * (NUM_CLUSTER_WORKERS if IN_KUBE_MODE else NUM_LOCAL_WORKERS)}"),
 ]
 
 # settings related to connecting to elasticsearch
 es_cluster_settings = {
-    "es.nodes" : "elasticsearch" if os.environ.get(kube_mode_check) == "true" else "localhost",
+    "es.nodes" : "elasticsearch" if IN_KUBE_MODE else "localhost",
     "es.port" : "9200",
     "es.read.metadata": "true",
     "es.write.operation": "upsert",

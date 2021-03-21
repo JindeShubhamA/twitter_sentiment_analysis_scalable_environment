@@ -5,16 +5,25 @@ from pyspark.sql.types import ArrayType, StringType
 
 import settings
 import os
+import math
 from reverse_geocoder import ReverseGeocoder
 from search_tree import SearchTree
 from tweet_processing import *
+
+
+# the maximum amount of characters a tweet can contain
+MAX_TWEET_CHARS = 280
+# the size of the chunks we want to divide the lengths in.
+# so we get 0-chunk_size, chunk_size-chunk_size*2, chunk_size*2-chunk_size*3, etc.
+LENGTH_CHUNK_SIZE = 10
+NUM_CHUNKS = math.ceil(MAX_TWEET_CHARS / LENGTH_CHUNK_SIZE)
 
 
 class SparkDriver(object):
 
     def __init__(self):
         # determine if we are in kubernetes or not
-        kube_mode = os.environ.get(settings.kube_mode_check) == "true"
+        kube_mode = os.environ.get(settings.KUBE_MODE_VAR) == "true"
         # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
@@ -44,22 +53,24 @@ class SparkDriver(object):
 
 
     def read_es(self):
-        # for now the query is just static, but this could be updated in a loop for example
-        # q = """{
-        #   "query": {
-        #     "bool": {
-        #       "must": [
-        #         { "match": { "user_id": "36229248" }}
-        #       ]
-        #     }
-        #   }
-        # }"""
-
+        # this is our test query, with a randomly selected user id to get tweets from
+        # this user has around 177 tweets, so it is a nice test sample
         q = """{
           "query": {
-            "match_all": {}
+            "bool": {
+              "must": [
+                { "match": { "user_id": "36229248" }}
+              ]
+            }
           }
         }"""
+
+        # this is our query to get the full database
+        # q = """{
+        #   "query": {
+        #     "match_all": {}
+        #   }
+        # }"""
 
         print("Getting tweets from Elasticsearch...")
 
@@ -83,15 +94,19 @@ class SparkDriver(object):
         by_state = self.group_by_state(with_sentiment)
         by_hour = self.group_by_hour(with_date_and_time)
         by_day_of_week = self.group_by_day_of_week(with_date_and_time)
+        by_length = self.group_by_length(with_sentiment)
 
-        print("reduced by state:")
+        print("reduced by US state:")
         by_state.show(51)
 
-        print("reduced by hour:")
+        print("reduced by hour of day:")
         by_hour.show(24)
 
         print("reduced by day of week:")
         by_day_of_week.show()
+
+        print("reduced by length of tweet:")
+        by_length.show(NUM_CHUNKS)
 
         return by_state
 
@@ -139,7 +154,7 @@ class SparkDriver(object):
             ArrayType(StringType())
         )
 
-        state_tweets = location_reduced\
+        return location_reduced\
             .withColumn("state", get_state_udf("location"))\
             .groupBy("state")\
             .agg(F.sum("count").alias("count"),
@@ -148,30 +163,34 @@ class SparkDriver(object):
             .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("count"))\
             .withColumn("state_name", F.col("state").getItem(0))\
             .withColumn("state_code", F.col("state").getItem(1))\
-            .drop("state")
-
-        return state_tweets.select("state_name", "state_code", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
+            .select("state_name", "state_code", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
 
     def group_by_hour(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
         # reduce by hour, and order them by ascending hour
-        hour_reduced = self.agg_stats(tweets_with_date_and_time\
+        return self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_hour"), "timestamp_hour")\
             .withColumnRenamed("timestamp_hour", "hour")\
-            .orderBy("hour")
-
-        return hour_reduced.select("hour", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
+            .orderBy("hour")\
+            .select("hour", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
 
     def group_by_day_of_week(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
         # reduce by day of week, and order them by ascending day
-        dow_reduced = self.agg_stats(tweets_with_date_and_time\
+        return self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_day_of_week"), "timestamp_day_of_week")\
             .withColumn("day_name", get_day_of_week(F.col("timestamp_day_of_week")))\
             .withColumnRenamed("timestamp_day_of_week", "day_number")\
-            .orderBy("day_number")
+            .orderBy("day_number")\
+            .select("day_name", "day_number", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
-        return dow_reduced.select("day_name", "day_number", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
+
+    def group_by_length(self, tweets_with_sentiment: DataFrame) -> DataFrame:
+        # reduce by length of tweet
+        return self.agg_stats(tweets_with_sentiment\
+            .withColumn("tweet_length", F.floor(F.length("tweet") / LENGTH_CHUNK_SIZE) * LENGTH_CHUNK_SIZE)\
+            .groupBy("tweet_length"), "tweet_length")\
+            .orderBy("tweet_length")
 
 
     def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
