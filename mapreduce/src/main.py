@@ -76,68 +76,47 @@ class SparkDriver(object):
     def process_tweets(self, tweets: DataFrame) -> DataFrame:
         tweets.show()
 
+        with_stats = self.add_stats(tweets)
+        by_location = self.group_by_state(with_stats)
+        by_hour = self.group_by_hour(with_stats)
+
+        print("reduced by hour:")
+        by_hour.show(24)
+
+        print("reduced by state:")
+        by_location.show(51)
+
+        return by_location
+
+
+    def add_stats(self, tweets):
         # to each row (aka tweet), add a column that contains the sentiment of that tweet
-        with_sentiment = tweets\
+        with_sentiment = tweets \
             .withColumn("tweet_sentiment", get_sentiment_udf("tweet"))
 
         mean_sentiment = with_sentiment.groupBy().agg(F.mean("tweet_sentiment").alias("mean")).take(1)[0]["mean"]
 
-        with_deviation = with_sentiment\
-            .withColumn("mean_sentiment", F.lit(mean_sentiment))\
+        # to each row, add a column that contains the mean sentiment
+        # and the deviation of that row's sentiment from the mean
+        with_deviation = with_sentiment \
+            .withColumn("mean_sentiment", F.lit(mean_sentiment)) \
             .withColumn("deviation", F.abs(F.col("tweet_sentiment") - F.col("mean_sentiment")))
 
-        with_deviation.show()
+        return with_deviation
 
+
+    def group_by_state(self, tweets_with_stats, search_tree=None):
         # group the new dataframe rows by location (at this point still in coordinates!)
-        location_reduced = with_deviation\
-            .groupBy("location")\
+        location_reduced = tweets_with_stats \
+            .groupBy("location") \
             .agg(F.count("location").alias("weight"),
                  F.sum("tweet_sentiment").alias("total_sentiment"),
-                 F.sum("deviation").alias("total_deviation"))\
-            .withColumn("average_sentiment", F.col("total_sentiment") / F.col("weight"))\
-            .withColumn("average_deviation", F.col("total_deviation") / F.col("weight"))
-
-        # do grouping by time
-        # first split a timestamp of the format (yyyy-mm-dd HH:mm:ss) into the date (yyyy-mm-dd) and time (HH:mm:ss)
-        split_timestamp = split(with_deviation["timestamp"], " ")
-        # create a new intermediate dataframe with those columns added
-        with_st = with_deviation.withColumn("timestamp_date", split_timestamp.getItem(0))\
-                                .withColumn("timestamp_time", split_timestamp.getItem(1))
-        # split those new columns into year, month, day, hour columns
-        # (minutes and seconds seem kinda useless but are trivial to add as well)
-        split_date = split(with_st["timestamp_date"], "-")
-        split_time = split(with_st["timestamp_time"], ":")
-        # add the columns to new dataframe
-        with_date_and_time = with_st.withColumn("timestamp_year", split_date.getItem(0))\
-                                    .withColumn("timestamp_month", split_date.getItem(1))\
-                                    .withColumn("timestamp_day", split_date.getItem(2))\
-                                    .withColumn("timestamp_hour", split_time.getItem(0))
-        # reduce by hour, and order them by ascending hour
-        hour_reduced = with_date_and_time\
-            .groupBy("timestamp_hour")\
-            .agg(F.count("location").alias("weight"),
-                 F.sum("tweet_sentiment").alias("total_sentiment"),
-                 F.sum("deviation").alias("total_deviation"))\
-            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight"))\
-            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight"))\
-            .orderBy("timestamp_hour")
-        # count = location_reduced.count()
-
-        # print("1st mapreduce: ")
-        # print(f"{count} rows")
-        # print(location_reduced.explain(True))
-        print("reduced by location:")
-        location_reduced.show()
-        print()
-        print("reduced by hour:")
-        hour_reduced.show(24)
-        print()
-
-        # repartitioned = location_reduced.coalesce(1)
-        # repartitioned.show()
+                 F.sum("deviation").alias("total_deviation")) \
+            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight")) \
+            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight"))
 
         # create a search tree and broadcast it to the workers
-        tree = ReverseGeocoder.create_tree()
+        tree = ReverseGeocoder.create_tree() if search_tree is None else search_tree
         btree = self.spark_session.sparkContext.broadcast(tree)
         broadcasted_tree = btree.value
 
@@ -145,25 +124,35 @@ class SparkDriver(object):
         get_state_udf = F.udf(
             lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record
         )
-        state_tweets = location_reduced.withColumn("state", get_state_udf("location"))\
-            .groupBy("state")\
+        state_tweets = location_reduced.withColumn("state", get_state_udf("location")) \
+            .groupBy("state") \
             .agg(F.sum("weight").alias("weight"),
                  F.sum("total_sentiment").alias("state_sentiment"),
-                 F.sum("total_deviation").alias("state_deviation"))\
-            .withColumn("mean_sentiment", F.col("state_sentiment") / F.col("weight"))\
+                 F.sum("total_deviation").alias("state_deviation")) \
+            .withColumn("mean_sentiment", F.col("state_sentiment") / F.col("weight")) \
             .withColumn("standard_deviation", F.col("state_deviation") / F.col("weight"))
 
-        # count_2 = state_tweets.count()
-
-        # print("2nd mapreduce: ")
-        # print(state_tweets.explain(True))
-        print("reduced by state:")
-        state_tweets.show(51)
-
-        # repartitioned_2 = state_tweets.coalesce(1)
-        # repartitioned_2.show()
-
         return state_tweets
+
+
+    def group_by_hour(self, tweets_with_stats):
+        # do grouping by time
+        with_date_and_time = tweets_with_stats.withColumn("timestamp_year", F.year("timestamp")) \
+            .withColumn("timestamp_month", F.month("timestamp")) \
+            .withColumn("timestamp_day", F.dayofmonth("timestamp")) \
+            .withColumn("timestamp_hour", F.hour("timestamp"))
+
+        # reduce by hour, and order them by ascending hour
+        hour_reduced = with_date_and_time \
+            .groupBy("timestamp_hour") \
+            .agg(F.count("location").alias("weight"),
+                 F.sum("tweet_sentiment").alias("total_sentiment"),
+                 F.sum("deviation").alias("total_deviation")) \
+            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight")) \
+            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight")) \
+            .orderBy("timestamp_hour")
+
+        return hour_reduced
 
 
     def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
