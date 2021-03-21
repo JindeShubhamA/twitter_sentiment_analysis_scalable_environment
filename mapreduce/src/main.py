@@ -1,11 +1,12 @@
 import pyspark
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, GroupedData
 from pyspark.sql.functions import split
 
 
 import settings
 import os
 from reverse_geocoder import ReverseGeocoder
+from search_tree import SearchTree
 from tweet_processing import *
 
 
@@ -76,12 +77,18 @@ class SparkDriver(object):
     def process_tweets(self, tweets: DataFrame) -> DataFrame:
         tweets.show()
 
-        with_stats = self.add_stats(tweets)
-        by_location = self.group_by_state(with_stats)
-        by_hour = self.group_by_hour(with_stats)
+        with_sentiment = self.add_sentiment(tweets)
+        with_date_and_time = self.add_time(with_sentiment)
+
+        by_location = self.group_by_state(with_sentiment)
+        by_hour = self.group_by_hour(with_date_and_time)
+        by_day_of_week = self.group_by_day_of_week(with_date_and_time)
 
         print("reduced by hour:")
         by_hour.show(24)
+
+        print("reduced by day of week:")
+        by_day_of_week.show()
 
         print("reduced by state:")
         by_location.show(51)
@@ -89,31 +96,35 @@ class SparkDriver(object):
         return by_location
 
 
-    def add_stats(self, tweets):
+    def add_sentiment(self, tweets: DataFrame) -> DataFrame:
         # to each row (aka tweet), add a column that contains the sentiment of that tweet
-        with_sentiment = tweets \
+        return tweets\
             .withColumn("tweet_sentiment", get_sentiment_udf("tweet"))
 
-        mean_sentiment = with_sentiment.groupBy().agg(F.mean("tweet_sentiment").alias("mean")).take(1)[0]["mean"]
 
-        # to each row, add a column that contains the mean sentiment
-        # and the deviation of that row's sentiment from the mean
-        with_deviation = with_sentiment \
-            .withColumn("mean_sentiment", F.lit(mean_sentiment)) \
-            .withColumn("deviation", F.abs(F.col("tweet_sentiment") - F.col("mean_sentiment")))
+    def add_time(self, tweets: DataFrame) -> DataFrame:
+        # do grouping by time
+        return tweets\
+            .withColumn("timestamp_year", F.year("timestamp"))\
+            .withColumn("timestamp_month", F.month("timestamp"))\
+            .withColumn("timestamp_day", F.dayofmonth("timestamp"))\
+            .withColumn("timestamp_hour", F.hour("timestamp"))\
+            .withColumn("timestamp_day_of_week", (F.dayofweek("timestamp") + 5) % 7)
+            # (x + 5) % 7 in the line above is short for (x - 2 + 7) % 7,
+            # we do -1 to index from 0, then another -1 to wrap Sunday around to the end of the list
 
-        return with_deviation
 
-
-    def group_by_state(self, tweets_with_stats, search_tree=None):
-        # group the new dataframe rows by location (at this point still in coordinates!)
-        location_reduced = tweets_with_stats \
-            .groupBy("location") \
-            .agg(F.count("location").alias("weight"),
+    def agg_stats(self, to_be_agg: GroupedData, weight_col: str) -> DataFrame:
+        return to_be_agg\
+            .agg(F.count(weight_col).alias("weight"),
                  F.sum("tweet_sentiment").alias("total_sentiment"),
-                 F.sum("deviation").alias("total_deviation")) \
-            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight")) \
-            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight"))
+                 F.mean("tweet_sentiment").alias("mean_sentiment"),
+                 F.sum(F.abs(F.col("tweet_sentiment"))).alias("absolute_sentiment"))
+
+
+    def group_by_state(self, tweets_with_stats: DataFrame, search_tree: SearchTree=None) -> DataFrame:
+        # group the new dataframe rows by location (at this point still in coordinates!)
+        location_reduced = self.agg_stats(tweets_with_stats.groupBy("location"), "location")
 
         # create a search tree and broadcast it to the workers
         tree = ReverseGeocoder.create_tree() if search_tree is None else search_tree
@@ -124,35 +135,35 @@ class SparkDriver(object):
         get_state_udf = F.udf(
             lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record
         )
-        state_tweets = location_reduced.withColumn("state", get_state_udf("location")) \
-            .groupBy("state") \
+
+        state_tweets = location_reduced\
+            .withColumn("state", get_state_udf("location"))\
+            .groupBy("state")\
             .agg(F.sum("weight").alias("weight"),
-                 F.sum("total_sentiment").alias("state_sentiment"),
-                 F.sum("total_deviation").alias("state_deviation")) \
-            .withColumn("mean_sentiment", F.col("state_sentiment") / F.col("weight")) \
-            .withColumn("standard_deviation", F.col("state_deviation") / F.col("weight"))
+                 F.sum("total_sentiment").alias("total_sentiment"),
+                 F.sum(F.abs(F.col("absolute_sentiment"))).alias("absolute_sentiment"))\
+            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight"))
 
         return state_tweets
 
 
-    def group_by_hour(self, tweets_with_stats):
-        # do grouping by time
-        with_date_and_time = tweets_with_stats.withColumn("timestamp_year", F.year("timestamp")) \
-            .withColumn("timestamp_month", F.month("timestamp")) \
-            .withColumn("timestamp_day", F.dayofmonth("timestamp")) \
-            .withColumn("timestamp_hour", F.hour("timestamp"))
-
+    def group_by_hour(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
         # reduce by hour, and order them by ascending hour
-        hour_reduced = with_date_and_time \
-            .groupBy("timestamp_hour") \
-            .agg(F.count("location").alias("weight"),
-                 F.sum("tweet_sentiment").alias("total_sentiment"),
-                 F.sum("deviation").alias("total_deviation")) \
-            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight")) \
-            .withColumn("standard_deviation", F.col("total_deviation") / F.col("weight")) \
+        hour_reduced = self.agg_stats(tweets_with_date_and_time\
+            .groupBy("timestamp_hour"), "timestamp_hour")\
             .orderBy("timestamp_hour")
 
         return hour_reduced
+
+
+    def group_by_day_of_week(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
+        # reduce by day of week, and order them by ascending day
+        dow_reduced = self.agg_stats(tweets_with_date_and_time\
+            .groupBy("timestamp_day_of_week"), "timestamp_day_of_week")\
+            .withColumn("day_name", get_day_of_week(F.col("timestamp_day_of_week")))\
+            .orderBy("timestamp_day_of_week")
+
+        return dow_reduced
 
 
     def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
