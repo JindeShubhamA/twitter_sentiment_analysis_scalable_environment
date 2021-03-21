@@ -1,7 +1,7 @@
 import pyspark
 from pyspark.sql import DataFrame, GroupedData
 from pyspark.sql.functions import split
-
+from pyspark.sql.types import ArrayType, StringType
 
 import settings
 import os
@@ -45,21 +45,21 @@ class SparkDriver(object):
 
     def read_es(self):
         # for now the query is just static, but this could be updated in a loop for example
-        q = """{
-          "query": {
-            "bool": {
-              "must": [
-                { "match": { "user_id": "36229248" }}
-              ]
-            }
-          }
-        }"""
-
         # q = """{
         #   "query": {
-        #     "match_all": {}
+        #     "bool": {
+        #       "must": [
+        #         { "match": { "user_id": "36229248" }}
+        #       ]
+        #     }
         #   }
         # }"""
+
+        q = """{
+          "query": {
+            "match_all": {}
+          }
+        }"""
 
         print("Getting tweets from Elasticsearch...")
 
@@ -80,9 +80,12 @@ class SparkDriver(object):
         with_sentiment = self.add_sentiment(tweets)
         with_date_and_time = self.add_time(with_sentiment)
 
-        by_location = self.group_by_state(with_sentiment)
+        by_state = self.group_by_state(with_sentiment)
         by_hour = self.group_by_hour(with_date_and_time)
         by_day_of_week = self.group_by_day_of_week(with_date_and_time)
+
+        print("reduced by state:")
+        by_state.show(51)
 
         print("reduced by hour:")
         by_hour.show(24)
@@ -90,10 +93,7 @@ class SparkDriver(object):
         print("reduced by day of week:")
         by_day_of_week.show()
 
-        print("reduced by state:")
-        by_location.show(51)
-
-        return by_location
+        return by_state
 
 
     def add_sentiment(self, tweets: DataFrame) -> DataFrame:
@@ -114,12 +114,12 @@ class SparkDriver(object):
             # we do -1 to index from 0, then another -1 to wrap Sunday around to the end of the list
 
 
-    def agg_stats(self, to_be_agg: GroupedData, weight_col: str) -> DataFrame:
+    def agg_stats(self, to_be_agg: GroupedData, count_col: str) -> DataFrame:
         return to_be_agg\
-            .agg(F.count(weight_col).alias("weight"),
+            .agg(F.count(count_col).alias("count"),
                  F.sum("tweet_sentiment").alias("total_sentiment"),
-                 F.mean("tweet_sentiment").alias("mean_sentiment"),
-                 F.sum(F.abs(F.col("tweet_sentiment"))).alias("absolute_sentiment"))
+                 F.sum(F.abs(F.col("tweet_sentiment"))).alias("absolute_sentiment"),
+                 F.mean("tweet_sentiment").alias("mean_sentiment"))
 
 
     def group_by_state(self, tweets_with_stats: DataFrame, search_tree: SearchTree=None) -> DataFrame:
@@ -132,28 +132,35 @@ class SparkDriver(object):
         broadcasted_tree = btree.value
 
         # do reverse geocoding to get the 'average' sentiment per state
+        # also make sure to specify the return type (ArrayType(StringType()))
+        # as this helps spark to keep it as an array instead of converting it to a string
         get_state_udf = F.udf(
-            lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record
+            lambda z: ReverseGeocoder.get_from_tree_by_string(z, broadcasted_tree).record,
+            ArrayType(StringType())
         )
 
         state_tweets = location_reduced\
             .withColumn("state", get_state_udf("location"))\
             .groupBy("state")\
-            .agg(F.sum("weight").alias("weight"),
+            .agg(F.sum("count").alias("count"),
                  F.sum("total_sentiment").alias("total_sentiment"),
                  F.sum(F.abs(F.col("absolute_sentiment"))).alias("absolute_sentiment"))\
-            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("weight"))
+            .withColumn("mean_sentiment", F.col("total_sentiment") / F.col("count"))\
+            .withColumn("state_name", F.col("state").getItem(0))\
+            .withColumn("state_code", F.col("state").getItem(1))\
+            .drop("state")
 
-        return state_tweets
+        return state_tweets.select("state_name", "state_code", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
 
     def group_by_hour(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
         # reduce by hour, and order them by ascending hour
         hour_reduced = self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_hour"), "timestamp_hour")\
-            .orderBy("timestamp_hour")
+            .withColumnRenamed("timestamp_hour", "hour")\
+            .orderBy("hour")
 
-        return hour_reduced
+        return hour_reduced.select("hour", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
 
     def group_by_day_of_week(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
@@ -161,9 +168,10 @@ class SparkDriver(object):
         dow_reduced = self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_day_of_week"), "timestamp_day_of_week")\
             .withColumn("day_name", get_day_of_week(F.col("timestamp_day_of_week")))\
-            .orderBy("timestamp_day_of_week")
+            .withColumnRenamed("timestamp_day_of_week", "day_number")\
+            .orderBy("day_number")
 
-        return dow_reduced
+        return dow_reduced.select("day_name", "day_number", "count", "total_sentiment", "absolute_sentiment", "mean_sentiment")
 
 
     def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
