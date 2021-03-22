@@ -22,5 +22,6 @@ get_sentiment_udf = F.udf(
 #     lambda x: ReverseGeocoder.get_from_tree_by_string(x, broadcasted_tree)
 # )
 
+# TODO: find a way to do this without udf, since those apparently kill parallelism
 days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 get_day_of_week = F.udf(lambda z: days[z])

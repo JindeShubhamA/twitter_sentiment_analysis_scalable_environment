@@ -1,10 +1,11 @@
+from typing import Tuple
+
 import pyspark
 from pyspark.sql import DataFrame, GroupedData
-from pyspark.sql.functions import split
 from pyspark.sql.types import ArrayType, StringType
 
+from settings import IN_KUBE_MODE
 import settings
-import os
 import math
 from reverse_geocoder import ReverseGeocoder
 from search_tree import SearchTree
@@ -18,19 +19,20 @@ MAX_TWEET_CHARS = 280
 LENGTH_CHUNK_SIZE = 10
 NUM_CHUNKS = math.ceil(MAX_TWEET_CHARS / LENGTH_CHUNK_SIZE)
 
+# if set to true, will print more details along the way to help with debugging
+DEBUG = True
+
 
 class SparkDriver(object):
 
     def __init__(self):
-        # determine if we are in kubernetes or not
-        kube_mode = os.environ.get(settings.KUBE_MODE_VAR) == "true"
         # create spark session by creating a config first
         self.spark_conf = pyspark.SparkConf()
         self.spark_conf.setAll(settings.spark_settings)
 
         # if we are not inside kubernetes, that means we likely won't have access to the elasticsearch nodes
         # so we change some settings that allow us to communicate with elasticsearch across different networks
-        if not kube_mode:
+        if not IN_KUBE_MODE:
             self.spark_conf.set("spark.es.nodes.discovery", False)
             self.spark_conf.set("spark.es.nodes.wan.only", True)
 
@@ -48,11 +50,19 @@ class SparkDriver(object):
 
         # print some helpful information
         print("Configured Spark and Spark driver")
-        print(f"Spark driver is in {'kubernetes' if kube_mode else 'local'} mode")
+        print(f"Spark driver is in {'kubernetes' if IN_KUBE_MODE else 'local'} mode")
         print(f"Running PySpark version {self.spark_session.version}")
 
 
-    def read_es(self):
+    def read_es(self) -> DataFrame:
+        """reads a set of tweets from elasticsearch
+
+        the relevant settings from `settings.py` are used for the configuration
+
+        :return: the retrieved tweets
+        :rtype: DataFrame
+        """
+
         # this is our test query, with a randomly selected user id to get tweets from
         # this user has around 177 tweets, so it is a nice test sample
         q = """{
@@ -72,7 +82,7 @@ class SparkDriver(object):
         #   }
         # }"""
 
-        print("Getting tweets from Elasticsearch...")
+        print("Getting tweets from ElasticSearch...")
 
         retrieved_tweets = self.spark_session.read.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
@@ -85,8 +95,26 @@ class SparkDriver(object):
         return retrieved_tweets
 
 
-    def process_tweets(self, tweets: DataFrame) -> DataFrame:
-        tweets.show()
+    def process_tweets(self, tweets: DataFrame) -> Tuple[DataFrame, DataFrame, DataFrame, DataFrame]:
+        """executes all processing steps on the tweets from elasticsearch
+
+        | these steps are:
+        | - adding the sentiment
+        | - adding the timestamp component columns
+        | - grouping by US state
+        | - grouping by hour of day
+        | - grouping by day of the week
+        | - grouping by length of the tweet
+
+        :param tweets: the tweets from elasticsearch
+        :type tweets: DataFrame
+
+        :return: all of the results from the grouping steps, in the order that they are mentioned above
+        :rtype: Tuple[DataFrame, DataFrame, DataFrame, DataFrame]
+        """
+
+        if DEBUG:
+            tweets.show()
 
         with_sentiment = self.add_sentiment(tweets)
         with_date_and_time = self.add_time(with_sentiment)
@@ -96,28 +124,55 @@ class SparkDriver(object):
         by_day_of_week = self.group_by_day_of_week(with_date_and_time)
         by_length = self.group_by_length(with_sentiment)
 
-        print("reduced by US state:")
-        by_state.show(51)
+        if DEBUG:
+            print("reduced by US state:")
+            by_state.show(51)
 
-        print("reduced by hour of day:")
-        by_hour.show(24)
+            print("reduced by hour of day:")
+            by_hour.show(24)
 
-        print("reduced by day of week:")
-        by_day_of_week.show()
+            print("reduced by day of week:")
+            by_day_of_week.show()
 
-        print("reduced by length of tweet:")
-        by_length.show(NUM_CHUNKS)
+            print("reduced by length of tweet:")
+            by_length.show(NUM_CHUNKS)
 
-        return by_state
+        return by_state, by_hour, by_day_of_week, by_length
 
 
     def add_sentiment(self, tweets: DataFrame) -> DataFrame:
+        """adds a column containing the sentiment of each tweet
+
+        :param tweets: the tweets from elasticsearch
+        :type tweets: DataFrame
+
+        :return: the `tweets` with the sentiments added
+        :rtype: DataFrame
+        """
+
         # to each row (aka tweet), add a column that contains the sentiment of that tweet
         return tweets\
             .withColumn("tweet_sentiment", get_sentiment_udf("tweet"))
 
 
     def add_time(self, tweets: DataFrame) -> DataFrame:
+        """splits the timestamp column into its individual components and adds those columns to the dataframe
+
+        | those columns are:
+        | - `timestamp_year`: the year of the timestamp
+        | - `timestamp_month`: the month of the timestamp
+        | - `timestamp_day`: the day of the month of the timestamp
+        | - `timestamp_hour`: the hour of day of the timestamp
+        | - `timestamp_day_of_week`: the day of week of the timestamp
+        | note: adding more columns would be trivial to do, if desired
+
+        :param tweets: the tweets from elasticsearch
+        :type tweets: DataFrame
+
+        :return: the `tweets` with the timestamp component columns added
+        :rtype: DataFrame
+        """
+
         # do grouping by time
         return tweets\
             .withColumn("timestamp_year", F.year("timestamp"))\
@@ -130,6 +185,25 @@ class SparkDriver(object):
 
 
     def agg_stats(self, to_be_agg: GroupedData, count_col: str) -> DataFrame:
+        """takes a dataframe that has `groupBy` called on it and aggregates it with columns for the statistics
+
+        | those columns are:
+        | - `count`: the amount of items that belong to the group in that row
+        | - `total_sentiment`: the sum of the sentiments in the group in that row
+        | - `absolute_sentiment`: the sum of the absolute values of the sentiments in the group in that row,
+            this is useful to determine how spread out the sentiments were
+        | - `mean_sentiment`: the average sentiment of the group in that row
+
+        :param to_be_agg: the data to be aggregated
+        :type to_be_agg: GroupedData
+        :param count_col: the column that should be counted to get the amount of items in a group,
+            this is usually equal to the column that the dataframe was grouped by
+        :type count_col: str
+
+        :return: the aggregated dataframe
+        :rtype: DataFrame
+        """
+
         return to_be_agg\
             .agg(F.count(count_col).alias("count"),
                  F.sum("tweet_sentiment").alias("total_sentiment"),
@@ -137,9 +211,24 @@ class SparkDriver(object):
                  F.mean("tweet_sentiment").alias("mean_sentiment"))
 
 
-    def group_by_state(self, tweets_with_stats: DataFrame, search_tree: SearchTree=None) -> DataFrame:
+    def group_by_state(self, tweets_with_sentiment: DataFrame, search_tree: SearchTree=None) -> DataFrame:
+        """groups the tweets by the US state they were posted from
+
+        to go from coordinates to a US state, we use the functions from the `reverse_geocoder.py` module.
+        this, in turn, uses the shapefiles from the `shapefiles` directory
+        to find the state that contains the coordinates
+
+        :param tweets_with_sentiment: the tweets from elasticsearch with a sentiment column added
+        :type tweets_with_sentiment: DataFrame
+        :param search_tree: the search tree to use, can be left out to generate a new tree
+        :type search_tree: SearchTree, optional
+
+        :return: the `tweets_with_sentiment`, grouped by the US state they were posted from
+        :rtype: DataFrame
+        """
+
         # group the new dataframe rows by location (at this point still in coordinates!)
-        location_reduced = self.agg_stats(tweets_with_stats.groupBy("location"), "location")
+        location_reduced = self.agg_stats(tweets_with_sentiment.groupBy("location"), "location")
 
         # create a search tree and broadcast it to the workers
         tree = ReverseGeocoder.create_tree() if search_tree is None else search_tree
@@ -167,6 +256,21 @@ class SparkDriver(object):
 
 
     def group_by_hour(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
+        """groups the tweet by the hour of day they were posted
+
+        | this is achieved by simply truncating the timestamp:
+        | - ex: 14:10:00 gets grouped in hour 14
+        | - ex: 20:50:00 gets grouped in hour 20
+
+        :param tweets_with_date_and_time: the tweets from elasticsearch with extra columns
+            that separate the timestamp into its individual components
+        :type tweets_with_date_and_time: DataFrame
+
+        :return: the `tweets_with_date_and_time`, grouped by hour of day,
+            and ordered by those as well
+        :rtype: DataFrame
+        """
+
         # reduce by hour, and order them by ascending hour
         return self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_hour"), "timestamp_hour")\
@@ -176,6 +280,17 @@ class SparkDriver(object):
 
 
     def group_by_day_of_week(self, tweets_with_date_and_time: DataFrame) -> DataFrame:
+        """groups the tweets by the day of the week they were posted
+
+        :param tweets_with_date_and_time: the tweets from elasticsearch with extra columns
+            that separate the timestamp into its individual components
+        :type tweets_with_date_and_time: DataFrame
+
+        :return: the `tweets_with_date_and_time`, grouped by day of the week,
+            and ordered by those as well (starting at Monday)
+        :rtype: DataFrame
+        """
+
         # reduce by day of week, and order them by ascending day
         return self.agg_stats(tweets_with_date_and_time\
             .groupBy("timestamp_day_of_week"), "timestamp_day_of_week")\
@@ -186,6 +301,20 @@ class SparkDriver(object):
 
 
     def group_by_length(self, tweets_with_sentiment: DataFrame) -> DataFrame:
+        """groups the tweets by their length
+
+        this functions uses the constant LENGTH_CHUNK_SIZE to determine the size and the ranges of the groups
+
+        :param tweets_with_sentiment: the tweets from elasticsearch with a sentiment column added
+        :type tweets_with_sentiment: DataFrame
+
+        :return: the `tweets_with_sentiment`, grouped by length of the tweet
+        :rtype: DataFrame
+        """
+
+        if DEBUG:
+            print(f"Tweets will be grouped by multiples of {LENGTH_CHUNK_SIZE}")
+
         # reduce by length of tweet
         return self.agg_stats(tweets_with_sentiment\
             .withColumn("tweet_length", F.floor(F.length("tweet") / LENGTH_CHUNK_SIZE) * LENGTH_CHUNK_SIZE)\
@@ -194,6 +323,16 @@ class SparkDriver(object):
 
 
     def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
+        """stores the processed tweets back in elasticsearch
+
+        the relevant setting from `settings.py` are used for the configuration
+
+        :param processed_tweets: the dataframe to store in elasticsearch, which contains the processed data
+        :type processed_tweets: DataFrame
+
+        :return: None
+        """
+
         print("Writing to es cluster...", processed_tweets)
         # write to elasticsearch on the set ip (node), port, and index (resource)
         processed_tweets.write.format("es")\
@@ -208,10 +347,12 @@ class SparkDriver(object):
         print("Done!")
 
 
-
 if __name__ == "__main__":
     spark_driver = SparkDriver()
 
     r_tweets = spark_driver.read_es()
-    p_tweets = spark_driver.process_tweets(r_tweets)
-    # spark_driver.store_processed_tweets(p_tweets)
+    p_by_state, p_by_hour, p_by_day_of_week, p_by_length = spark_driver.process_tweets(r_tweets)
+    # spark_driver.store_processed_tweets(p_by_state)
+    # spark_driver.store_processed_tweets(p_by_hour)
+    # spark_driver.store_processed_tweets(p_by_day_of_week)
+    # spark_driver.store_processed_tweets(p_by_length)
