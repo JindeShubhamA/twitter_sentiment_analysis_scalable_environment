@@ -9,8 +9,6 @@ from utils import (
     set_logger, config_reader, acked)
 from es.model import esDriver
 
-
-COIN_PAGE = "https://api.coinranking.com/v1/public/coins"
 LOGGER = set_logger("producer_logger")
 PARENT_PATH = os.fspath(Path(__file__).parents[1])
 CONFIG_PATH = os.path.join(
@@ -23,13 +21,14 @@ STREAM_TOPIC = config_reader(
     CONFIG_PATH, "app.settings")["topic_raw"]
 
 
-def produce_list_of_coin_dict_into_kafka(list_of_dict):
+def produce_list_of_tweet_dict_into_kafka(list_of_dict):
     producer = Producer(KAFKA_CONFIG_DICT)
     for tweet in list_of_dict:
+        print("tweet is ", tweet)
         try:
             producer.produce(
                 topic=STREAM_TOPIC,
-                value=dumps(tweet).encode("utf-8"),
+                value=dumps(tweet['_source']).encode("utf-8"),
                 callback=acked)
             producer.poll(1)
         except Exception as e:
@@ -42,7 +41,7 @@ if __name__ == "__main__":
     es = esDriver()
     while True:
         es_response = list(es.scanAll())
-        produce_list_of_coin_dict_into_kafka(es_response)
+        produce_list_of_tweet_dict_into_kafka(es_response)
         LOGGER.info("Produced into Kafka topic: {STREAM_TOPIC}.")
         LOGGER.info("Waiting for the next round...")
         time.sleep(10)
