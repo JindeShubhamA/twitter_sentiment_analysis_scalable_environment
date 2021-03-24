@@ -6,7 +6,7 @@ from json import dumps
 from confluent_kafka import Producer
 
 from utils import (
-    set_logger, config_reader, acked)
+    set_logger, config_reader, acked, current_milli_time)
 from es.model import esDriver
 
 LOGGER = set_logger("producer_logger")
@@ -24,11 +24,13 @@ STREAM_TOPIC = config_reader(
 def produce_list_of_tweet_dict_into_kafka(list_of_dict):
     producer = Producer(KAFKA_CONFIG_DICT)
     for tweet in list_of_dict:
+        tweet = tweet['_source']
+        tweet["timestamp_logger"]= current_milli_time()
         print("tweet is ", tweet)
         try:
             producer.produce(
                 topic=STREAM_TOPIC,
-                value=dumps(tweet['_source']).encode("utf-8"),
+                value=dumps(tweet).encode("utf-8"),
                 callback=acked)
             producer.poll(1)
         except Exception as e:

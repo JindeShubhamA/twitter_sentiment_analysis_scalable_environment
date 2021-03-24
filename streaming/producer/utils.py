@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import logging
 import configparser
-
+import time
 
 PARENT_PATH = os.fspath(Path(__file__).parents[0])
 LOGGING_FILE_PATH = os.path.join(PARENT_PATH, "__logger", "{}.log")
@@ -38,3 +38,7 @@ def acked(err, msg):
         print("Failed to deliver message: {msg}: {err}")
     else:
         print("Message produced for Kafka message object...")
+
+
+def current_milli_time():
+    return int(round(time.time() * 1000))

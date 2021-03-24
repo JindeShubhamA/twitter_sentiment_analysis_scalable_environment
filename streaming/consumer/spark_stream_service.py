@@ -1,21 +1,16 @@
 from pyspark.sql.functions import (
     from_json, col, window, avg, desc, max, min, udf, sum)
-
 # import numpy as np
 from spark_base import Source
 from schema.tweet_models import tweet_model_schema
 from pyspark.sql.types import StructField, StructType, StringType, DoubleType
 import json
-
 import re
 import textblob
 from textblob import TextBlob
 from pyspark.sql import functions as F
-
-
 import shapefile
 from typing import Optional as Opt, Tuple
-
 from shapefile import Shapes
 from shapely.geometry import shape, Point
 from random import randrange
@@ -76,8 +71,24 @@ if __name__ == "__main__":
             StructField("tweet", StringType()),
             StructField("timestamp", StringType()),
             StructField("location", StringType()),
+            StructField("timestamp_logger", StringType())
         ]
     )
+
+    schema1 = StructType(
+        [
+            StructField("location", StringType()),
+            StructField("state", StringType()),
+            StructField("tweet", StringType()),
+            StructField("sentiment", StringType())
+
+        ]
+    )
+
+    w = window(
+        timeColumn="date_time",
+        windowDuration="60 seconds",
+        slideDuration="20 seconds")
 
     df = connect_to_kafka_stream(
         topic_name="stream", spark_session=s.spark)
@@ -86,25 +97,33 @@ if __name__ == "__main__":
 
     sentiment_udf = udf(lambda z: get_tweet_sentiment(z), StringType())
 
-    #df1 =df.selectExpr("CAST(value AS STRING) AS json").select(from_json(col("json"), schema).alias("data")).select("data.tweet",sentiment_udf('data.tweet').alias('sentiment'))
+    df1 = df.selectExpr("CAST(value AS STRING) AS json").select(from_json(col("json"), schema).alias("data")).select("data.location",get_state_udf('data.location').alias('state'),"data.tweet",sentiment_udf('data.tweet').alias('sentiment'),"data.timestamp_logger")
 
-    df = df.selectExpr("CAST(value AS STRING) AS json").select(from_json(col("json"), schema).alias("data")).select("data.location",get_state_udf('data.location').alias('state'),"data.tweet",sentiment_udf('data.tweet').alias('sentiment'))
 
-    #df2 = df.selec("data.*").groupBy(col("state")).agg(avg("price"))
+    #df2 = df1.select("state","sentiment",(col("timestamp_logger")/1000).cast("timestamp").alias("date_time")).withWatermark("date_time", "20 seconds").groupBy(col("state"),w).agg(sum("sentiment")).select("state",col("sum(sentiment)").alias("relevant sentiment"))
+    df2 = df1.select("state", "sentiment",
+                      (col("timestamp_logger") / 1000).cast("timestamp").alias("date_time")).withWatermark("date_time",
+                                                                                                    "20 seconds").groupBy(col("state"), w).agg(sum("sentiment")).select("state",
+                "window",
+                col("sum(sentiment)").alias("relevant sentiment"))
 
-    query = (df
+    # df2 = df1.select("state", "sentiment","timestamp")
+
+
+    query = (df1
              .writeStream
              .option("truncate", "false")
              .outputMode("append")
              .format("console")
              .start()
              )
-    # query1= (df1
-    #          .writeStream
-    #          .option("truncate", "false")
-    #          .outputMode("append")
-    #          .format("console")
-    #          .start()
-    #          )
-    #query1.awaitTermination()
+
+    query1= (df2
+             .writeStream
+             .option("truncate", "false")
+             .outputMode("append")
+             .format("console")
+             .start()
+             )
+    query1.awaitTermination()
     query.awaitTermination()
