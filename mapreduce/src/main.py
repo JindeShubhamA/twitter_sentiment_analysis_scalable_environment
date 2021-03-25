@@ -11,7 +11,6 @@ from reverse_geocoder import ReverseGeocoder
 from search_tree import SearchTree
 from tweet_processing import *
 
-
 # the maximum amount of characters a tweet can contain
 MAX_TWEET_CHARS = 280
 # the size of the chunks we want to divide the lengths in.

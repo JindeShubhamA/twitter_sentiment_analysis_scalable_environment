@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spark-driver
+  labels:
+    io.kompose.service: spark-driver
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+        - image: docker.io/richardswesterhof/mapreduce:latest
+          name: spark-driver
+          ports:
+            - containerPort: 30001
+            - containerPort: 30002
+            - containerPort: 4040
+          env:
+            - name: RUNNING_AS_KUBE_DEPLOYMENT
+              value: "true"
+      hostname: spark-driver
+      restartPolicy: OnFailure
