@@ -20,7 +20,7 @@ After the processing is done, the drivers store the results in the initial datab
 
 ### Database
 **Technologies:** Elasticsearch, Python  
-**Description:** The database is responsible for storing the inital dataset of tweets as well as the results of the processing pipeline. The results should ideally be stored in a separate database, but this approach helps us to have a less resource-hungy development environment. However, the initial data as well as the various results are separated in their individual Elasticsearch indices for convenience, ease-of-access and portability. 
+**Description:** The database is responsible for storing the inital dataset of tweets as well as the results of the processing pipeline. The results should ideally be stored in a separate database, but this approach helps us to have a less resource-hungy development environment. However, the initial data as well as the various results are separated in their individual Elasticsearch indices for convenience, ease-of-access and portability. For implementing the database itself we chose to use Elasticsearch because it is distributed by nature, document-oriented (so there's no schema that needs to be defined and updated throughout the development process), fast and easily scalable, plus the fact that it's something none of us worked with before, and this project looked like a good opportunity. For populating the database we used Elasticsearch's Python library, which is a wrapper for the RESTful API of Elasticsearch. This allowed us to abstract and streamline most of the querying process and the pushing data in parallel process.
 
 ### Message queue
 
