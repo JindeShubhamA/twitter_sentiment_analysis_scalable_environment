@@ -29,6 +29,6 @@ After the processing is done, the drivers store the results in the initial datab
 ### Spark driver - streaming
 
 ### Spark cluster
-**Technologies:** Spark, PySpark
-Spark is a distributed data processing engine. It lets us process big data sets faster by splitting the work up into chunks and assigning those chunks across a number of workers. The cluster used for our development process is formed by one Spark leader and 2 Spark worders. Its integrated map/reduce implementation stands at the core of our processing pipeline. We chose to use Spark over the alternatives because it is faster, well-documented and well-integrated in Python via the PySpark library.
+**Technologies:** Spark, PySpark  
+**Description:** Spark is a distributed data processing engine. It lets us process big data sets faster by splitting the work up into chunks and assigning those chunks across a number of workers. The cluster used for our development process is formed by one Spark leader and 2 Spark worders. Its integrated map/reduce implementation stands at the core of our processing pipeline. We chose to use Spark over the alternatives because it is faster, well-documented and well-integrated in Python via the PySpark library.
 
