@@ -33,12 +33,15 @@ After the processing is done, the drivers store the results in the initial datab
 ### Spark driver - streaming
 
 **Technologies:** - Spark, Pyspark
+
 **Description:** Spark Streaming is an extension of the core Spark API that enables scalable, high-throughput, fault-tolerant stream processing of live data streams. Internally, it works as follows, spark Streaming receives live input data streams and divides the data into batches, which are then processed by the Spark engine to generate the final stream of results in batches. Spark streaming has 3 major components input source, streaming engine, output source. Spark streaming engine process incoming data from various input sources and writes to output source. Spark streaming has a micro-batch architecture where stream is treated as series of batches of data and new batches are created at regular interval. In our application we are using window approach where windowed computations allow you to apply transformations over a sliding window of data. We specify two operations 
 
 **window length** The duration of window in secs.
+
 **sliding interval** The interval at which window operations are performed in secs.
 
 We map the latitude and longitude to location(particular state in USA) and tweet to sentiment score. We then perform aggregation operation to find the mean sentiment, max sentiment, absolute sentiment in the interval. The results can then be stored in Database for visualization. 
+
 ![Alt text](./Architecture/spark_stream.png?raw=true "Window based Spark Streaming")
 
 ### Spark cluster
