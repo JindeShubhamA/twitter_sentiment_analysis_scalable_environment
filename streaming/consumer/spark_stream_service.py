@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     w = window(
         timeColumn="date_time",
-        windowDuration="60 seconds",
-        slideDuration="20 seconds")
+        windowDuration="20 seconds",
+        slideDuration="5 seconds")
 
     df = connect_to_kafka_stream(
         topic_name="stream", spark_session=s.spark)
@@ -99,31 +99,27 @@ if __name__ == "__main__":
 
     df1 = df.selectExpr("CAST(value AS STRING) AS json").select(from_json(col("json"), schema).alias("data")).select("data.location",get_state_udf('data.location').alias('state'),"data.tweet",sentiment_udf('data.tweet').alias('sentiment'),"data.timestamp_logger")
 
-
     #df2 = df1.select("state","sentiment",(col("timestamp_logger")/1000).cast("timestamp").alias("date_time")).withWatermark("date_time", "20 seconds").groupBy(col("state"),w).agg(sum("sentiment")).select("state",col("sum(sentiment)").alias("relevant sentiment"))
     df2 = df1.select("state", "sentiment",
                       (col("timestamp_logger") / 1000).cast("timestamp").alias("date_time")).withWatermark("date_time",
-                                                                                                    "20 seconds").groupBy(col("state"), w).agg(sum("sentiment")).select("state",
+                                                                                                    "5 seconds").groupBy(col("state"), w).agg(avg("sentiment"),max("sentiment"),min("sentiment")).select("state",
                 "window",
-                col("sum(sentiment)").alias("relevant sentiment"))
+                col("avg(sentiment)").alias("Mean sentiment"),col("max(sentiment)").alias("Max sentiment"), col("min(sentiment)").alias("Avg abs sentiment"))
 
-    # df2 = df1.select("state", "sentiment","timestamp")
+    # query = (df1
+    #          .writeStream
+    #          .option("truncate", "false")
+    #          .outputMode("append")
+    #          .format("console")
+    #          .start()
+    #          )
 
-
-    query = (df1
+    query= (df2
              .writeStream
              .option("truncate", "false")
              .outputMode("append")
              .format("console")
              .start()
              )
-
-    query1= (df2
-             .writeStream
-             .option("truncate", "false")
-             .outputMode("append")
-             .format("console")
-             .start()
-             )
-    query1.awaitTermination()
     query.awaitTermination()
+    # query.awaitTermination()
