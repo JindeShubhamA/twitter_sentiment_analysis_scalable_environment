@@ -23,7 +23,7 @@ After the processing is done, the drivers store the results in the initial datab
 **Description:** The database is responsible for storing the inital dataset of tweets as well as the results of the processing pipeline. The results should ideally be stored in a separate database, but this approach helps us to have a less resource-hungy development environment. However, the initial data as well as the various results are separated in their individual Elasticsearch indices for convenience, ease-of-access and portability. For implementing the database itself we chose to use Elasticsearch because it is distributed by nature, document-oriented (so there's no schema that needs to be defined and updated throughout the development process), fast and easily scalable, plus the fact that it's something none of us worked with before, and this project looked like a good opportunity. For populating the database we used Elasticsearch's Python library, which is a wrapper for the RESTful API of Elasticsearch. This allowed us to abstract and streamline most of the querying process and the pushing data in parallel process.
 
 ### Message queue
-**Technologies:** -  Kafka, Python 
+**Technologies:**   Kafka, Python 
 
 **Description:** For handling continuosly flow of data, we are using stream processing. Message queue is required to handle continuously stream of data. Kafka is a unified. high-throughput, low-latency platform for handling streaming data. Kafka uses a binary TCP-based protocol that is optimized for efficiency and relies on a "message set" abstraction that naturally groups messages together to reduce the overhead of the network roundtrip. Kafka stores key-value message that comes from various processes called producers which then divided into different partitions and topics. Message are strictly ordered by their 'offsets' within the partitions. Consumers read the message from the partitions. Kafka runs on a cluster of one or more servers (called brokers), and the partitions of all topics are distributed across the cluster nodes. Additionally, partitions are replicated to multiple brokers. In our application, we used confluent_kafka library which provides a wrapper around Kafka and can be used with Python. The producer will query the database i.e. Elasticsearch to get the data(100 data points at a time) and will send it to Kafka Producer with the topic **stream**. Our consumer is based on Spark which can read the data from the Kafka cluster with the same topic name.
 ![Alt text](./Architecture/kafka.png?raw=true "Kafka Architecture")
@@ -31,6 +31,15 @@ After the processing is done, the drivers store the results in the initial datab
 ### Spark driver - historical
 
 ### Spark driver - streaming
+
+**Technologies:** - Spark, Pyspark
+**Description:** Spark Streaming is an extension of the core Spark API that enables scalable, high-throughput, fault-tolerant stream processing of live data streams. Internally, it works as follows, spark Streaming receives live input data streams and divides the data into batches, which are then processed by the Spark engine to generate the final stream of results in batches. Spark streaming has 3 major components input source, streaming engine, output source. Spark streaming engine process incoming data from various input sources and writes to output source. Spark streaming has a micro-batch architecture where stream is treated as series of batches of data and new batches are created at regular interval. In our application we are using window approach where windowed computations allow you to apply transformations over a sliding window of data. We specify two operations 
+
+**window length** The duration of window in secs.
+**sliding interval** The interval at which window operations are performed in secs.
+
+We map the latitude and longitude to location(particular state in USA) and tweet to sentiment score. We then perform aggregation operation to find the mean sentiment, max sentiment, absolute sentiment in the interval. The results can then be stored in Database for visualization. 
+![Alt text](./Architecture/spark_stream.png?raw=true "Window based Spark Streaming")
 
 ### Spark cluster
 **Technologies:** Spark, PySpark  
