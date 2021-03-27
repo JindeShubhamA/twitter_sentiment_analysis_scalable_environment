@@ -9,7 +9,7 @@ Dockerfile.base
 *.yml
 .dockerignore
 .gitignore
-*.sh
 *.md
 *.tar
 /src/zipped-packages
+/images/

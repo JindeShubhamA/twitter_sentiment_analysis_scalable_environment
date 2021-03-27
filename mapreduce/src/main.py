@@ -133,7 +133,7 @@ class SparkDriver(object):
             print("reduced by day of week:")
             by_day_of_week.show()
 
-            print("reduced by length of tweet:")
+            print(f"reduced by length of tweet (by multiples of {LENGTH_CHUNK_SIZE}):")
             by_length.show(NUM_CHUNKS)
 
         return by_state, by_hour, by_day_of_week, by_length
