@@ -11,7 +11,6 @@ from reverse_geocoder import ReverseGeocoder
 from search_tree import SearchTree
 from tweet_processing import *
 
-
 # the maximum amount of characters a tweet can contain
 MAX_TWEET_CHARS = 280
 # the size of the chunks we want to divide the lengths in.
@@ -134,7 +133,7 @@ class SparkDriver(object):
             print("reduced by day of week:")
             by_day_of_week.show()
 
-            print("reduced by length of tweet:")
+            print(f"reduced by length of tweet (by multiples of {LENGTH_CHUNK_SIZE}):")
             by_length.show(NUM_CHUNKS)
 
         return by_state, by_hour, by_day_of_week, by_length

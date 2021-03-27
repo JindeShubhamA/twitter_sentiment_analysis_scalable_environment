@@ -1,0 +1,2 @@
+python3 elasticsearch_cfg.py
+python3 import_in_elasticsearch.py
