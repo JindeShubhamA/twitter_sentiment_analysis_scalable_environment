@@ -24,16 +24,18 @@ spec:
         io.kompose.service: spark-driver
     spec:
       containers:
-        - image: docker.io/richardswesterhof/mapreduce:latest
+        - image: docker.io/richardswesterhof/scalable_computing:mapreduce
           name: spark-driver
           ports:
             - containerPort: 30001
             - containerPort: 30002
             - containerPort: 4040
+            - containerPort: 18080
           resources: {}
           env: 
             - name: RUNNING_AS_KUBE_DEPLOYMENT
               value: "true"
+          imagePullPolicy: Never
       hostname: spark-driver
       restartPolicy: Always
 status: {}

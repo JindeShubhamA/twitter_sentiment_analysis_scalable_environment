@@ -1,5 +1,8 @@
 # use the base image from our repository as a cache for python, java, and pip requirements
-FROM richardswesterhof/mapreduce_base:latest
+FROM richardswesterhof/scalable_computing:mapreduce_base
 COPY . .
 
-CMD python main.py
+RUN chmod +x "./run_driver.sh"
+
+#CMD python main.py
+CMD ["sh", "./run_driver.sh"]

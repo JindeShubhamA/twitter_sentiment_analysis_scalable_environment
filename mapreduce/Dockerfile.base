@@ -4,14 +4,14 @@ FROM python:3.6-alpine
 RUN apk add --no-cache bash openjdk8-jre
 
 
-# black magic to install geo stuff for shapely, taken from:
+# black magic to install geo stuff for shapely, adapted from:
 # https://stackoverflow.com/questions/58700451/alpine-error-during-installing-python-shapely
 RUN echo "http://mirror.leaseweb.com/alpine/edge/community" >> /etc/apk/repositories
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-RUN apk add --virtual .build-deps \
+RUN apk add --virtual .builddeps \
         --repository http://dl-cdn.alpinelinux.org/alpine/edge/community \
         --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
-        gcc libc-dev geos-dev geos && \
+        gcc libc-dev geos-dev geos procps coreutils && \
     runDeps="$(scanelf --needed --nobanner --recursive /usr/local \
     | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
     | xargs -r apk info --installed \
@@ -25,6 +25,24 @@ COPY ./src/requirements.txt ./requirements.txt
 RUN pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     pip3 cache purge
+
+# get the location of spark
+RUN touch /SPARK_HOME && \
+    echo "$(pip show pyspark | sed -n -e 's/^Location: //p')/pyspark" > /SPARK_HOME
+
+# more black magic, yay!
+# this one will add the sbin folder to spark, since pyspark doesn't come with it for some reason :)
+RUN apk add --virtual .builddeps2 \
+        git && \
+    mkdir $(cat /SPARK_HOME)/temp-git-pull && \
+    cd $(cat /SPARK_HOME)/temp-git-pull && \
+    git clone --depth 1 --filter=blob:none --sparse https://github.com/apache/spark . && \
+    git sparse-checkout init --cone && \
+    git sparse-checkout set sbin && \
+    mv ./sbin/ ../sbin/ && \
+    cd .. && \
+    rm -rf temp-git-pull && \
+    apk del .builddeps2
 
 ENV JAVA_HOME /usr/
 RUN export JAVA_HOME

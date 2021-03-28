@@ -19,6 +19,9 @@ spec:
     - name: "4040"
       port: 4040
       targetPort: 4040
+    - name: "18080"
+      port: 18080
+      targetPort: 18080
   selector:
     io.kompose.service: spark-driver
 status:
