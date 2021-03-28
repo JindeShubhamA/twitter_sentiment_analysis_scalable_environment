@@ -14,7 +14,7 @@ The architecture of the application follows the structure presented in the diagr
 
 The arrows show the dataflow of our architecture. The tweets are retrieved from the database by the Spark drivers. We have two spark drivers, one responsible for the historical data and one responsible for the streaming data. The former retrieves the data using a simple SQL query, while the latter gets it via a message queue. Both drivers then send the tweets to the Spark cluster for processing.
 
-The processing consists of ... **TODO: list + detail processing steps here**
+The processing consists of reducing the initial data based on the *length, hour, day and state* by aggregating the sentiment score of the tweets. More details about the process can be found in the Spark driver for historical data description.
 
 After the processing is done, the workers store the results in the initial database.
 
