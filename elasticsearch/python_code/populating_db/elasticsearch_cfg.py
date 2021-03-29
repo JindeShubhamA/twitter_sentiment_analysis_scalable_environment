@@ -71,7 +71,17 @@ hour_mapping = {
 
 # anova mapping
 
-index_names = ['length', 'state', 'day', 'hour', 'raw']
+# create the raw tweets inex
+print('Creating raw tweets index...')
+es.indices.create(index='tweets', body=settings_body, ignore=400)
+print('Done!')
+
+print('Updating mapping...')
+es.indices.put_mapping(body=raw_mapping, index='tweets')
+print('Done!')
+
+
+index_names = ['length', 'state', 'day', 'hour']
 
 for name in index_names:
     print(f'Creating {name} reduced tweets index...')
