@@ -52,7 +52,10 @@ es_cluster_settings = {
 # settings related to the resources in elasticsearch
 es_resource_names = {
     "read_resource": "tweets",
-    "write_resource": "tweet_numbers"
+    "write_resource_state": "state_reduced",
+    "write_resource_length": "length_reduced",
+    "write_resource_hour": "hour_reduced",
+    "write_resource_day": "day_reduced"
 }
 
 # hadoop settings (these are currently unused, were used for RDD stuff)
