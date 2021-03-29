@@ -69,8 +69,6 @@ hour_mapping = {
     }
 }
 
-# anova mapping
-
 # create the raw tweets inex
 print('Creating raw tweets index...')
 es.indices.create(index='tweets', body=settings_body, ignore=400)
