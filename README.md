@@ -4,7 +4,7 @@
 
 This document represents an overview of our project. We start with its architecture and then delve into each major component and give a short description for it, along with the technologies used.  
 
-The main idea behind the project is to determine which of the following characteristics: *day, time, state* and *length* influence the sentiment of a tweet the most. We chose to use [this dataset](https://archive.org/details/twitter_cikm_2010) for our project, since every tweet contains a timestamp and a geotag for the time and location it was sent from, respectively. To accomplish our goal we perform various map/reduce steps on our dataset in order to group the tweets based on the aforementioned characteristics and compute the mean sentiment for each group. Finally, we use the **two-way ANOVA** test to determine which of our metrics contribute the most to the variance of the sentiment score. 
+The main idea behind the project is to determine which of the following characteristics: *day, time, state* and *length* influence the sentiment of a tweet the most. We chose to use [this dataset](https://archive.org/details/twitter_cikm_2010) for our project, since every tweet contains a timestamp and a geotag for the time and location it was sent from, respectively. To accomplish our goal we perform various map/reduce steps on our dataset in order to group the tweets based on the aforementioned characteristics and compute the mean sentiment for each group.
 
 ## Architecture
 
