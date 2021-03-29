@@ -35,7 +35,7 @@ spec:
           env: 
             - name: RUNNING_AS_KUBE_DEPLOYMENT
               value: "true"
-          imagePullPolicy: Never
+          imagePullPolicy: Always
       hostname: spark-driver
       restartPolicy: Always
 status: {}
