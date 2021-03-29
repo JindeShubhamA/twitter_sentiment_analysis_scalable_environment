@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 
 import pyspark
@@ -19,7 +20,7 @@ LENGTH_CHUNK_SIZE = 10
 NUM_CHUNKS = math.ceil(MAX_TWEET_CHARS / LENGTH_CHUNK_SIZE)
 
 # if set to true, will print more details along the way to help with debugging
-DEBUG = True
+DEBUG = os.environ.get("DEBUG_SPARK_DRIVER", False)
 
 
 class SparkDriver(object):
@@ -321,11 +322,13 @@ class SparkDriver(object):
             .orderBy("tweet_length")
 
 
-    def store_processed_tweets(self, processed_tweets: DataFrame) -> None:
+    def store_processed_tweets(self, processed_tweets: DataFrame, resource_name: str) -> None:
         """stores the processed tweets back in elasticsearch
 
         the relevant setting from `settings.py` are used for the configuration
 
+        :param resource_name: the resource name in ES to store to
+        :type resource_name: str
         :param processed_tweets: the dataframe to store in elasticsearch, which contains the processed data
         :type processed_tweets: DataFrame
 
@@ -337,7 +340,7 @@ class SparkDriver(object):
         processed_tweets.write.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\
-            .option("es.resource", settings.es_resource_names["write_resource"]) \
+            .option("es.resource", resource_name) \
             .option("es.write.operation", settings.es_cluster_settings["es.write.operation"])\
             .option("es.mapping.id", settings.es_cluster_settings["es.mapping.id"])\
             .mode(settings.es_cluster_settings["mode"])\
@@ -351,7 +354,7 @@ if __name__ == "__main__":
 
     r_tweets = spark_driver.read_es()
     p_by_state, p_by_hour, p_by_day_of_week, p_by_length = spark_driver.process_tweets(r_tweets)
-    # spark_driver.store_processed_tweets(p_by_state)
-    # spark_driver.store_processed_tweets(p_by_hour)
-    # spark_driver.store_processed_tweets(p_by_day_of_week)
-    # spark_driver.store_processed_tweets(p_by_length)
+    spark_driver.store_processed_tweets(p_by_state, settings.es_resource_names["write_resource_state"])
+    spark_driver.store_processed_tweets(p_by_hour, settings.es_resource_names["write_resource_hour"])
+    spark_driver.store_processed_tweets(p_by_day_of_week, settings.es_resource_names["write_resource_day"])
+    spark_driver.store_processed_tweets(p_by_length, settings.es_resource_names["write_resource_length"])
