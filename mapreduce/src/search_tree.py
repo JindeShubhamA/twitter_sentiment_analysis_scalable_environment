@@ -104,7 +104,7 @@ class SearchTree(object):
 
         # return an empty object instead of None, so we can always access "shape", "bounds" and "record"
         # even if they are useless
-        return GeocodingResult(None, None, None)
+        return GeocodingResult(None, None, ["Unknown", "Unknown"])
 
 
     def find_by_string(self, coord_string: str) -> GeocodingResult:

@@ -52,6 +52,7 @@ class SparkDriver(object):
         print("Configured Spark and Spark driver")
         print(f"Spark driver is in {'kubernetes' if IN_KUBE_MODE else 'local'} mode")
         print(f"Running PySpark version {self.spark_session.version}")
+        print(f"Debug mode is {'enabled' if DEBUG else 'disabled'}")
 
 
     def read_es(self) -> DataFrame:
@@ -65,22 +66,22 @@ class SparkDriver(object):
 
         # this is our test query, with a randomly selected user id to get tweets from
         # this user has around 177 tweets, so it is a nice test sample
-        q = """{
-          "query": {
-            "bool": {
-              "must": [
-                { "match": { "user_id": "36229248" }}
-              ]
-            }
-          }
-        }"""
-
-        # this is our query to get the full database
         # q = """{
         #   "query": {
-        #     "match_all": {}
+        #     "bool": {
+        #       "must": [
+        #         { "match": { "user_id": "36229248" }}
+        #       ]
+        #     }
         #   }
         # }"""
+
+        # this is our query to get the full database
+        q = """{
+          "query": {
+            "match_all": {}
+          }
+        }"""
 
         print("Getting tweets from ElasticSearch...")
 
@@ -322,27 +323,29 @@ class SparkDriver(object):
             .orderBy("tweet_length")
 
 
-    def store_processed_tweets(self, processed_tweets: DataFrame, resource_name: str) -> None:
+    def store_processed_tweets(self, processed_tweets: DataFrame, resource_name: str, id_column: str) -> None:
         """stores the processed tweets back in elasticsearch
 
         the relevant setting from `settings.py` are used for the configuration
 
-        :param resource_name: the resource name in ES to store to
-        :type resource_name: str
         :param processed_tweets: the dataframe to store in elasticsearch, which contains the processed data
         :type processed_tweets: DataFrame
+        :param resource_name: the resource name in ES to store to
+        :type resource_name: str
+        :param id_column: the name of the column to id the rows by in ES
+        :type id_column str
 
         :return: None
         """
 
-        print("Writing to es cluster...", processed_tweets)
+        print("Writing to ElasticSearch cluster...", processed_tweets)
         # write to elasticsearch on the set ip (node), port, and index (resource)
         processed_tweets.write.format("es")\
             .option("es.nodes", settings.es_cluster_settings["es.nodes"])\
             .option("es.port", settings.es_cluster_settings["es.port"])\
             .option("es.resource", resource_name) \
             .option("es.write.operation", settings.es_cluster_settings["es.write.operation"])\
-            .option("es.mapping.id", settings.es_cluster_settings["es.mapping.id"])\
+            .option("es.mapping.id", id_column)\
             .mode(settings.es_cluster_settings["mode"])\
             .save()
 
@@ -354,7 +357,15 @@ if __name__ == "__main__":
 
     r_tweets = spark_driver.read_es()
     p_by_state, p_by_hour, p_by_day_of_week, p_by_length = spark_driver.process_tweets(r_tweets)
-    spark_driver.store_processed_tweets(p_by_state, settings.es_resource_names["write_resource_state"])
-    spark_driver.store_processed_tweets(p_by_hour, settings.es_resource_names["write_resource_hour"])
-    spark_driver.store_processed_tweets(p_by_day_of_week, settings.es_resource_names["write_resource_day"])
-    spark_driver.store_processed_tweets(p_by_length, settings.es_resource_names["write_resource_length"])
+    spark_driver.store_processed_tweets(p_by_state,
+                                        settings.es_resource_names["write_resource_state"],
+                                        settings.es_cluster_settings["es.mapping.id.state"])
+    spark_driver.store_processed_tweets(p_by_hour,
+                                        settings.es_resource_names["write_resource_hour"],
+                                        settings.es_cluster_settings["es.mapping.id.hour"])
+    spark_driver.store_processed_tweets(p_by_day_of_week,
+                                        settings.es_resource_names["write_resource_day"],
+                                        settings.es_cluster_settings["es.mapping.id.day"])
+    spark_driver.store_processed_tweets(p_by_length,
+                                        settings.es_resource_names["write_resource_length"],
+                                        settings.es_cluster_settings["es.mapping.id.length"])

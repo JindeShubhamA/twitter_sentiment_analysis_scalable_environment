@@ -45,7 +45,10 @@ es_cluster_settings = {
     "es.port" : "9200",
     "es.read.metadata": "true",
     "es.write.operation": "upsert",
-    "es.mapping.id": "id",
+    "es.mapping.id.state": "state_name",
+    "es.mapping.id.length": "tweet_length",
+    "es.mapping.id.hour": "hour",
+    "es.mapping.id.day": "day_name",
     "mode": "append"
 }
 
